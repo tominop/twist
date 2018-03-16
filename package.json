@@ -1,0 +1,29 @@
+{
+    "name": "twist",
+    "version": "1.1.1",
+    "description": "twist_exchange_api service",
+    "main": "service.js",
+    "scripts": {
+        "test": "echo \\\\\\\"Error: no test specified\\\\\\\" && exit 1",
+        "start": "node service"
+    },
+    "keywords": [
+        "twist",
+        "exchange",
+        "youdex",
+        "yoda",
+        "ethereum",
+        "bitcoin",
+        "api",
+        "atomic swap"
+    ],
+    "author": "Oleg Tomin",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^0.18.0",
+        "bluebird": "^3.5.1",
+        "body-parser": "^1.18.2",
+        "express": "^4.15.3",
+        "mongoose": "^4.11.9"
+    }
+}

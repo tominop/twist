@@ -1,0 +1,8 @@
+*.tar.gz
+*.log.*
+node_modules
+github.pub
+github
+private
+.gitignore.*
+.vscode
