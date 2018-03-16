@@ -3,7 +3,6 @@
 const Order = require("../models/orders"),
     TX = require("../models/transactions");
 
-
 newOrder = function(data, res) {
     const userID = data.userID,
         userAddrFrom = data.userAddrFrom,
@@ -60,7 +59,7 @@ newOrder = function(data, res) {
 
 findOrderByID = function(oid, res) {
     Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-        if (err) return myErrorHandler("findeOrderBeID exec: " + err.message, res);
+        if (err) return myErrorHandler("findOrderBeID exec: " + err.message, res);
         if (order == null) return myErrorHandler("order not foud", res);
         res.json({
             error: false,
@@ -69,16 +68,21 @@ findOrderByID = function(oid, res) {
     });
 };
 
+deleteOrderByID = function(oid, res) {
+    Order.findOneAndRemove({ exchangeTxId: oid }).exec(function(err, order) {
+        if (err) return myErrorHandler("deleteOrderBeID exec: " + err.message, res);
+        if (order == null) return myErrorHandler("order not foud", res);
+        res.json({ error: false });
+    });
+};
+
 findOrderByAddr = function(addr, res) {
     Order.findOne({ userAddrFrom: addr }).exec(function(err, order) {
-        if (err)
-            return myErrorHandler("findOrderByAddr exec1: " + err.message, res);
+        if (err) return myErrorHandler("findOrderByAddr exec1: " + err.message, res);
         if (order == null) {
             Order.findOne({ userAddrTo: addr }).exec(function(err, order) {
-                if (err)
-                    return myErrorHandler("findOrderByAddr exec2: " + err.message, res);
-                if (order == null)
-                    return res.json({ error: true, response: "order not foud" });
+                if (err) return myErrorHandler("findOrderByAddr exec2: " + err.message, res);
+                if (order == null) return res.json({ error: true, response: "order not foud" });
                 //  console.log('Order ' + orderID + '  %s', order.status.toString());
                 res.json({ error: false, order: order });
             });
@@ -91,10 +95,7 @@ findOrderByAddr = function(addr, res) {
 
 Order.prototype.waitTxFrom = function() {
     console.log(
-        timeNow() +
-        "exec order " +
-        this.exchangeTxId +
-        " : wait incoming Tx starts"
+        timeNow() + "exec order " + this.exchangeTxId + " : wait incoming Tx starts"
     );
     var myInterval,
         newTx = true;
@@ -119,11 +120,11 @@ Order.prototype.waitTxFrom = function() {
         });
     }, order.ttl * 60000);
     myInterval = setInterval(function() {
-        order.findTxFrom(myInterval, ttlTimeOut, );
+        order.findTxFrom(myInterval, ttlTimeOut);
     }, 20000);
 };
 
-Order.prototype.findTxFrom = function(interval, timeout, ) {
+Order.prototype.findTxFrom = function(interval, timeout) {
     var order = this;
     TX.findOne({ addrFrom: order.userAddrFrom }).exec(function(err, incTx) {
         if (err)
@@ -184,7 +185,7 @@ Order.prototype.findTxFrom = function(interval, timeout, ) {
                     else {
                         clearTimeout(timeout);
                         clearInterval(interval);
-                        order.makeTxTo('bob');
+                        order.makeTxTo("bob");
                     }
                 });
             }

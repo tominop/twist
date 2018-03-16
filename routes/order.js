@@ -23,6 +23,13 @@ app.get("/twist/order/:orderID", function(req, res) {
     else findOrderByID(req.params.orderID, res);
 });
 
+//  Route - orderStatusCheck() function
+app.delete("/twist/order/:orderID", function(req, res) {
+    if (invalidData(req.params.orderID))
+        res.json({ error: true, response: "invalid order ID" });
+    else deleteOrderByID(req.params.orderID, res);
+});
+
 //  Route - setOrderStatus() function
 app.get("/twist/status", function(req, res) {
     const query = require("url").parse(req.url, true).query;
