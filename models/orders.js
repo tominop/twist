@@ -26,7 +26,6 @@ const OrderSchema = new Schema({
     exchangeAddrTo: String,
     symbol: String,
     amount: Number
-
 });
 
 //Export function to create "SomeModel" model class

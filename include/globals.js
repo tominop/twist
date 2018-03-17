@@ -3,8 +3,8 @@
 //  addresses in twist.js must be the same as in microservices
 
 global.axios = require('axios'); //  AXIOS - compact lib for HttpRequest
-global.api = require("./twist_api"); //  microservices url
-global.twist = require("./twist"); //  exchange parameters: addresses, ttl, numConfirmations  ;
+//global.api = require("./twist_api"); //  microservices url
+global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations  ;
 
 
 //  global functions

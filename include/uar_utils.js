@@ -4,7 +4,7 @@
 uarFunc = function(url) {
     return axios.get(url)
         .catch(function(error) {
-            console.log('err: ' + error)
+            myErrorHandler('uarFunc: ' + error.message)
         });
 };
 
@@ -16,7 +16,9 @@ symbolConvert = function(symbol) {
             return "BT";
         case "BTC3":
             return "B3";
-        default:
+            case "YODA":
+            return "YD";
+            default:
             return "";
     };
 };

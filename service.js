@@ -14,21 +14,26 @@ app = express();
 //  Load global parameters and functions 
 require('./include/globals');
 
-//  Check api microservices connections
-require('./include/api_connections');
-
 //  Configure mongoDB
-
 const dbConfig = require(twist.mode == 'dev' ? './private/db' : './db'),
     mongoose = require('mongoose');
+
+mongoose.connection.on("open", function (ref) {
+    console.log(timeNow() + " TWIST service connected to mongo server");
+});
+
+mongoose.connection.on("error", function (err) {
+    myErrorHundler("could not connect to mongo server: " + err.messge);
+});
+
 // Connect to DB
 mongoose.connect(dbConfig.url, {
-    useMongoClient: true,
+    useMongoClient: true
 });
 mongoose.Promise = require('bluebird');
 
 //  CORS
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
     // Website you wish to allow to connect
     res.setHeader('Access-Control-Allow-Origin', '*');
     // Request methods you wish to allow
@@ -42,7 +47,7 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.options("/*", function(req, res, next) {
+app.options("/*", function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
@@ -52,18 +57,21 @@ app.options("/*", function(req, res, next) {
 //  Configuring express to use body-parser as middle-ware
 app.use(bodyParser.json());
 
-//  Load routes without express.router
+//  Load coin symbols and check aviable api microservices connections
+require('./include/api_connections');
+
+//  Load routes (shema without express.router)
 require('./routes/userAddr');
 require('./routes/order');
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
     next(err);
 });
 
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
     console.log(timeNow() + ' ' + err.message);
     res.status(err.status || 500);
     res.send(err);

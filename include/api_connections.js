@@ -1,23 +1,31 @@
 //  file api_connections.js
-//  check API microservices connections
+//  load symbols and check API microservices connections
+//global.symbol = [];
 
-checkConnection = function(url) {
-    axios.get(eval('api.' + url) + 'api/TWIST')
+global.coins = require('./coins');
+
+checkConnection = function(symbol) {
+    axios.get(symbol.api + 'api/TWIST')
         .then(function(response) {
             if (response) {
                 if (response.status == 200) {
-                    gasPrice = response.data.gasPrice;
-                    console.log(timeNow() + ' сервис ' + url + ' API enabled on host ' + response.data.host);
-                } else myErrorHandler('invalid response from service ' + url + ' API');
+                    symbol.enabled = true;
+                    symbol.balance = response.data.balance;
+                    symbol.reserv = 0;
+                    symbol.baseFee = response.data.fee;
+                    console.log(timeNow() + ' сервис ' + symbol + ' API enabled on host ' + response.data.host);
+                } else myErrorHandler('invalid response from service ' + symbol + ' API');
             }
         })
         .catch(function(error) {
-            myErrorHandler('service API not aviable on ' + eval('api.' + url));
+            myErrorHandler('service ' + symbol + ' API not aviable on ' + symbol.api);
+            symbol.enabled = false;
             process.exit();
         });
 };
 
+
 //  check API connections
-checkConnection('YODA');
-checkConnection('ETH');
-checkConnection('BTC');
+for (coin in coins) {
+    checkConnection(coins[coin]);
+}
