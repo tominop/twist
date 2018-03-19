@@ -19,11 +19,11 @@ const dbConfig = require(twist.mode == 'dev' ? './private/db' : './db'),
     mongoose = require('mongoose');
 
 mongoose.connection.on("open", function(ref) {
-    console.log(timeNow() + " TWIST service connected to mongo server");
+    console.log(timeNow() + " twist service connected to mongo server");
 });
 
 mongoose.connection.on("error", function(err) {
-    myErrorHundler("could not connect to mongo server: " + err.messge);
+    myErrorHandler("could not connect to mongo server: " + err.messge);
 });
 
 // Connect to DB
@@ -65,20 +65,16 @@ require('./routes/userAddr');
 require('./routes/order');
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-    var err = new Error('\"' + req.url + '\"' + ' route not support');
-    err.status = 404;
-    next(err);
+app.use(function(req, res) {
+    myErrorHandler('\"' + req.url + '\"' + ' route not support', res);
 });
 
 app.use(function(err, req, res, next) {
-    console.log(timeNow() + ' ' + err.message);
-    res.status(err.status || 500);
-    res.send(err);
+    myErrorHandler(('twist api service :' + err.message), res);
 });
 
 const port = process.env.PORT_TWIST || 8900
 
 app.listen(port, () => {
-    console.log(timeNow() + ' service TWIST listening on ' + port.toString())
+    console.log(timeNow() + ' twist service listening on ' + port.toString())
 })

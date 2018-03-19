@@ -15,12 +15,12 @@ getBalance = function(coin) {
                     return;
                 };
             };
-            myErrorHandler('invalid balance response from service ' + coins[coin].symbol + ' API');
+            myErrorHandler('getBalance: invalid balance response from service ' + coins[coin].symbol + ' API');
             coins[coin].enabled = false;
             coinUpdated(coin);
         })
         .catch(function(error) {
-            myErrorHandler('service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error:' + error.message);
+            myErrorHandler('getBalance: service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error' + error.message);
             coins[coin].enabled = false;
             coinUpdated(coin);
         });
@@ -41,13 +41,13 @@ getPrice = function(coin, base) {
                     return
                 };
             };
-            myErrorHandler('invalid response from price service for pair ' + coins[coin].symbol + base);
+            myErrorHandler('getPrice: invalid response from price service for pair ' + coins[coin].symbol + base);
             coins[coin].enabled = false;
             coinUpdated(coin);
         })
         .catch(function(error) {
             coins[coin].enabled = false;
-            myErrorHandler('price service API ' + twist.priceApiUrl + ' connection error:' + error.message);
+            myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + error.message);
             coinUpdated(coin);
         });
 };

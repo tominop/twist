@@ -8,27 +8,20 @@ require("../include/order_utils");
 //  Route - newOrder() function - main algorithm
 app.post("/twist/neworder", function(req, res) {
     if (invalidUserID(req.body.userID))
-        return myErrorHandler("invalid userID", res);
+        return myErrorHandler("neworder: invalid userID", res);
     if (invalidAddr(req.body.symbolFrom, req.body.userAddrFrom))
-        return myErrorHandler("invalid user Address From", res);
+        return myErrorHandler("neworder: invalid user Address From", res);
     if (invalidAddr(req.body.symbolTo, req.body.userAddrTo))
-        return myErrorHandler("invalid user Address To", res);
+        return myErrorHandler("neworder: invalid user Address To", res);
     newOrder(req.body, res);
-});
+})
 
 //  Route - orderStatusCheck() function
 app.get("/twist/order/:orderID", function(req, res) {
     if (invalidData(req.params.orderID))
-        res.json({ error: true, response: "invalid order ID" });
-    else findOrderByID(req.params.orderID, res);
-});
-
-//  Route - orderStatusCheck() function
-app.delete("/twist/order/:orderID", function(req, res) {
-    if (invalidData(req.params.orderID))
-        res.json({ error: true, response: "invalid order ID" });
-    else deleteOrderByID(req.params.orderID, res);
-});
+       return myErrorHandler("orderStatusCheck: invalid order ID", res);
+    findOrderByID(req.params.orderID, res);
+})
 
 //  Route - setOrderStatus() function
 app.get("/twist/status", function(req, res) {
@@ -36,30 +29,30 @@ app.get("/twist/status", function(req, res) {
     const orderID = query.order,
         status = parseInt(query.status);
     if (invalidData(orderID) || invalidData(status))
-        return myErrorHandler("invalid parameters", res);
+        return myErrorHandler("setOrderStatus: invalid parameters", res);
     setOrderStatusID(orderID, status, res);
-});
+})
 
 //  Route - getOrderByAddr() function
 app.get("/twist/addr/:addr", function(req, res) {
     const addr = req.params.addr;
     if (addr == undefined || addr == "")
-        return myErrorHandler("invalid parameter", res);
+        return myErrorHandler("getOrderByAddr: invalid address", res);
     findOrderByAddr(addr, res);
-});
+})
 
 //  Route - getCions function
 app.get("/twist/getcoins", function(req, res) {
     var info = {};
     for (coin in coins) {
-        var c = {}
+        var c = {};
         for (key in coins[coin]) {
             if (key != 'api' && key != 'walletFrom') c[key] = coins[coin][key];
         };
         info[coin] = c;
     };
     res.json({ error: false, coins: info });
-});
+})
 
 
 
@@ -70,23 +63,21 @@ app.get("/twist/price/:pair", function(req, res) {
     error = pair == undefined || (pair != "BTCETH" && pair != "ETHBTC");
     if (error) myErrorHandler("invalid parameter pair " + pair, res);
     else res.json({ error: false, price: pair == "ETHBTC" ? price : 1 / price });
-});
+})
 
 
 
 setOrderStatusID = function(orderID, status, res) {
     Order.findOne({ exchangeTxId: orderID }).exec(function(err, order) {
         if (err) return myErrorHandler(err.message, res);
-        else {
             if (order == null) return myErrorHandler("order not foud", res);
             if (status != undefined) {
                 order.status = status;
                 order.save(function(err) {
-                    if (err) return myErrorHandler(err.message, res);
+                    if (err) return myErrorHandler('setOrderStatusID order.save: ' + err.message, res);
                 });
                 //  console.log('Order ' + orderID + '  %s', order.status.toString());
                 if (res) res.json({ error: false, status: order.status });
             }
-        }
     });
 };
