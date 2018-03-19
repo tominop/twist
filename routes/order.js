@@ -50,7 +50,15 @@ app.get("/twist/addr/:addr", function(req, res) {
 
 //  Route - getCions function
 app.get("/twist/getcoins", function(req, res) {
-    res.json({ error: false, coins: coins});
+    var info = {};
+    for (coin in coins) {
+        var c = {}
+        for (key in coins[coin]) {
+            if (key != 'api' && key != 'walletFrom') c[key] = coins[coin][key];
+        };
+        info[coin] = c;
+    };
+    res.json({ error: false, coins: info });
 });
 
 
