@@ -48,6 +48,13 @@ app.get("/twist/addr/:addr", function(req, res) {
     findOrderByAddr(addr, res);
 });
 
+//  Route - getCions function
+app.get("/twist/getcoins", function(req, res) {
+    res.json({ error: false, coins: coins});
+});
+
+
+
 //  Route - getPrice() function
 app.get("/twist/price/:pair", function(req, res) {
     const pair = req.params.pair,
@@ -56,6 +63,8 @@ app.get("/twist/price/:pair", function(req, res) {
     if (error) myErrorHandler("invalid parameter pair " + pair, res);
     else res.json({ error: false, price: pair == "ETHBTC" ? price : 1 / price });
 });
+
+
 
 setOrderStatusID = function(orderID, status, res) {
     Order.findOne({ exchangeTxId: orderID }).exec(function(err, order) {

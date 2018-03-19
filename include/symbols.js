@@ -2,7 +2,7 @@
 //  load symbols and check API microservices connections
 //global.symbol = [];
 
-global.coins = require('./coins');
+global.coins = require(twist.mode == 'dev' ? './private/coins' : './coins');
 
 getBalance = function(coin) {
     axios.get(coin.api + 'balance/' + coins[coin].wallet)
@@ -59,7 +59,7 @@ coinUpdated = function (coin) {
 
 // regular check coins status !!!TODO regular update default coin options
 var checkCoins = setInterval(function () {
-//    const newCoins = require('./coins');
+//    const newCoins = require('./coins');  TODO
     for (coin in coins) {
 //        coins[coin] = newCoins[coin];
         coins[coin].updated = false;

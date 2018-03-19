@@ -6,3 +6,4 @@ github
 private
 .gitignore.*
 .vscode
+*.log

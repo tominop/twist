@@ -58,7 +58,7 @@ app.options("/*", function (req, res, next) {
 app.use(bodyParser.json());
 
 //  Load coin symbols and check aviable api microservices connections
-require('./include/api_connections');
+require('./include/symbols');
 
 //  Load routes (shema without express.router)
 require('./routes/userAddr');
