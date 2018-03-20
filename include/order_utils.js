@@ -20,14 +20,14 @@ newOrder = function (data, res) {
                 "newOrder: user have executed order ID " + order.exchangeTxId,
                 res
             );
-        const time = new Date().getTime(),
-            ratio = valueToFix(coins[symbolTo].price / coins[symbolFrom].price);
+        const time = new Date().getTime();
+        const ratio = valueToFix(coins[symbolTo].price / coins[symbolFrom].price);
         var order = new Order({
             exchangeTxId: time.toString(),
             createDateUTC: time,
             ttl: twist.ttl,
             status: 1,
-            exchangeRatio: raito,
+            exchangeRatio: ratio,
             userID: userID,
             userAddrFrom: userAddrFrom,
             symbolFrom: symbolFrom,
@@ -36,7 +36,7 @@ newOrder = function (data, res) {
             confirmTxFrom: false,
             userAddrTo: userAddrTo,
             symbolTo: symbolTo,
-            valueTo: valueToFix(valueFrom * ratio),
+            valueTo: valueToFix(valueFrom / ratio),
             hashTxTo: "",
             confirmTxTo: false,
             exchangeAddrTo: coins[symbolFrom].addressTo,
@@ -210,7 +210,7 @@ findTxFrom = function (order, interval, timeout) {
 
 /// TODO !!!
 makeTxTo = function (order) {
-    var change, valueFact = valueToFix(order.recieved * order.exchangeRatio);
+    var change, valueFact = valueToFix(order.recieved / order.exchangeRatio);
     change = valueToFix((order.recieved - twist.maxLimit / coins[order.symbolFrom].price));
     if (change > coins[order.symbolFrom].minerFee * 2) {    //  change must be more 2 x minerFee
         valueFact = valueToFix(twist.maxLimit / coins[order.symbolTo].price);

@@ -35,8 +35,8 @@ getPrice = function(coin, base) {
                 if (response.status == 200) {
                     if (isYODA) {
                         coin = 'YODA';
-                        coins[coin].price = response.data.price / 1000;
-                    } else coins[coin].price = response.data.price;
+                        coins[coin].price = valueToFix(response.data.price / 1000);
+                    } else coins[coin].price = valueToFix(response.data.price);
                     coinUpdated(coin);
                     return
                 };
