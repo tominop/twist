@@ -4,7 +4,7 @@ const Order = require("../models/orders"),
     ArhOrder = require("../models/orders"),
     TX = require("../models/transactions");
 
-newOrder = function(data, res) {
+newOrder = function (data, res) {
     const userID = data.userID,
         userAddrFrom = data.userAddrFrom,
         symbolFrom = data.symbolFrom,
@@ -12,7 +12,7 @@ newOrder = function(data, res) {
         userAddrTo = data.userAddrTo,
         symbolTo = data.symbolTo,
         valueTofromUser = valueToFix(data.valueTo);
-    Order.findOne({ userID: userID }).exec(function(err, order) {
+    Order.findOne({ userID: userID }).exec(function (err, order) {
         if (err)
             return myErrorHandler("newOrder: order.findOne promise1 " + err.message, res);
         if (order != null)
@@ -45,7 +45,7 @@ newOrder = function(data, res) {
             recieved: 0,
             sends: 0
         });
-        order.save(function(err) {
+        order.save(function (err) {
             if (err)
                 return myErrorHandler(
                     "newOrder: order ID " + order.exchangeTxId + " save1 " + err.message,
@@ -61,7 +61,7 @@ newOrder = function(data, res) {
     });
 };
 
-eXecute = function(order) {
+eXecute = function (order) {
     console.log(timeNow() + " order " + order.exchangeTxId + " exec starts");
     //  Start incoming Tx service
     var url = coins[order.symbolFrom].api;
@@ -74,7 +74,7 @@ eXecute = function(order) {
             confirms: coins[order.symbolFrom].confirmations
         });
     var myInterval;
-    var timeOut = setTimeout(function() {
+    var timeOut = setTimeout(function () {
         clearInterval(myInterval);
         myErrorHandler(
             "eXecute: exec order " +
@@ -84,7 +84,7 @@ eXecute = function(order) {
             " error2"
         );
     }, 20000);
-    myInterval = setInterval(function() {
+    myInterval = setInterval(function () {
         if (!error) {
             waitTxFrom(order);
             clearInterval(myInterval);
@@ -107,7 +107,7 @@ eXecute = function(order) {
         });
 };
 
-waitTxFrom = function(order) {
+waitTxFrom = function (order) {
     console.log(
         timeNow() +
         "exec order " +
@@ -116,7 +116,7 @@ waitTxFrom = function(order) {
     );
     var myInterval,
         newTx = true;
-    var ttlTimeOut = setTimeout(function() {
+    var ttlTimeOut = setTimeout(function () {
         clearInterval(myInterval);
         myErrorHandler(
             "waitTxFrom: exec order " +
@@ -127,7 +127,7 @@ waitTxFrom = function(order) {
         );
         //        incomingTxStop(order.symbolFrom);
         order.status = 8;
-        order.save(function(err) {
+        order.save(function (err) {
             if (err)
                 return myErrorHandler(
                     "waitTxFrom: exec order " + order.exchangeTxId + " save1, " + err.message,
@@ -135,13 +135,13 @@ waitTxFrom = function(order) {
                 );
         });
     }, order.ttl * 60000);
-    myInterval = setInterval(function() {
+    myInterval = setInterval(function () {
         findTxFrom(order, myInterval, ttlTimeOut);
     }, 20000);
 };
 
-findTxFrom = function(order, interval, timeout) {
-    TX.findOne({ addrFrom: order.userAddrFrom }).exec(function(err, incTx) {
+findTxFrom = function (order, interval, timeout) {
+    TX.findOne({ addrFrom: order.userAddrFrom }).exec(function (err, incTx) {
         var numConfirmations = coins[order.symbolFrom].confirmations;
         if (err)
             return myErrorHandler(
@@ -180,7 +180,7 @@ findTxFrom = function(order, interval, timeout) {
                 );
             } else return;
             order.hashTxFrom = incTx.hashTx;
-            order.save(function(err) {
+            order.save(function (err) {
                 if (err)
                     return myErrorHandler(
                         "findTxFrom: exec order " + order.exchangeTxId + " save2, " + err.message,
@@ -188,7 +188,7 @@ findTxFrom = function(order, interval, timeout) {
                     );
             });
             if (order.status == 4) {
-                incTx.remove(function(err) {
+                incTx.remove(function (err) {
                     if (err) myErrorHandler(
                         "findTxFrom: exec order " +
                         order.exchangeTxId +
@@ -209,24 +209,32 @@ findTxFrom = function(order, interval, timeout) {
 };
 
 /// TODO !!!
-makeTxTo = function(order) {
+makeTxTo = function (order) {
+    var change, valueFact = valueToFix(order.recieved * order.exchangeRatio);
+    change = valueToFix((order.recieved - twist.maxLimit / coins[order.symbolFrom].price));
+    if (change > coins[order.symbolFrom].minerFee * 2) {    //  change must be more 2 x minerFee
+        valueFact = valueToFix(twist.maxLimit / coins[order.symbolTo].price);
+        //        var changeOrder = new Order();
+        //        makeChange(changeOrder, change - minerFee);
+        console.log(' twist must send change ' + change + order.symbolFrom + ' to user');
+    }
     console.log(
         timeNow() +
         " order " +
         order.exchangeTxId +
-        " exec continue: make Tx to user"
+        " exec continue: send " + valueFact.toString() + order.symbolTo + ' to user'
     );
     var jsonData = JSON.stringify({
-        from: coins[order.symbolFrom].walletFrom, // account name in eth microservice
+        from: coins[order.symbolFrom].walletFrom, // account name in api microservice
         to: order.userAddrTo,
-        value: valueToFix(order.recieved * order.exchangeRatio)
+        value: valueFact
     });
     axios
         .get(coins[order.symbolTo].api + "makeTxAddrs/" + jsonData) // 
-        .then(function(outTx) {
+        .then(function (outTx) {
             order.status = 5;
             order.hashTxTo = outTx.data.hash;
-            order.save(function(err) {
+            order.save(function (err) {
                 if (err)
                     return myErrorHandler(
                         "makeTxTo: exec order " + order.exchangeTxId + " save, " + err.message
@@ -241,7 +249,7 @@ makeTxTo = function(order) {
             );
             axios
                 .get(coins[order.symbolTo].api + "waitTx/" + outTx.data.hash)
-                .then(function(h) {
+                .then(function (h) {
                     console.log(
                         timeNow() +
                         " exec order " +
@@ -251,15 +259,15 @@ makeTxTo = function(order) {
                     );
                     order.status = 7;
                     order.confirmTxTo = true;
-                    order.sends =
-                        arhorder = new ArhOrder(order);
-                    arhorder.save(function(err) {
+                    order.sends = valueFact
+                    var arhorder = new ArhOrder(order);
+                    arhorder.save(function (err) {
                         if (err)
                             return myErrorHandler(
                                 "makeTxTo: exec order " + order.exchangeTxId + " arhorder save, " + err.message
                             );
                     });
-                    order.remove(function(err) {
+                    order.remove(function (err) {
                         if (err)
                             return myErrorHandler("makeTxTo: order " + order.exchangeTxId +
                                 +" remove, " + err.message, res);
@@ -268,7 +276,7 @@ makeTxTo = function(order) {
                         timeNow() + " exec order " + order.exchangeTxId + " finished!"
                     );
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     myErrorHandler(
                         "makeTxTo: exec order " +
                         order.exchangeTxId +
@@ -279,7 +287,7 @@ makeTxTo = function(order) {
                     );
                 });
         })
-        .catch(function(err) {
+        .catch(function (err) {
             myErrorHandler(
                 "exec order " +
                 order.exchangeTxId +
@@ -291,8 +299,8 @@ makeTxTo = function(order) {
         });
 };
 
-findOrderByID = function(oid, res) {
-    Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
+findOrderByID = function (oid, res) {
+    Order.findOne({ exchangeTxId: oid }).exec(function (err, order) {
         if (err) return myErrorHandler("findOrderBeID exec: " + err.message, res);
         if (order == null) return myErrorHandler("order not foud", res);
         res.json({
@@ -302,20 +310,20 @@ findOrderByID = function(oid, res) {
     });
 };
 
-deleteOrderByID = function(oid, res) {
-    Order.findOneAndRemove({ exchangeTxId: oid }).exec(function(err, order) {
+deleteOrderByID = function (oid, res) {
+    Order.findOneAndRemove({ exchangeTxId: oid }).exec(function (err, order) {
         if (err) return myErrorHandler("deleteOrderBeID exec: " + err.message, res);
         if (order == null) return myErrorHandler("order not foud", res);
         res.json({ error: false });
     });
 };
 
-findOrderByAddr = function(addr, res) {
-    Order.findOne({ userAddrFrom: addr }).exec(function(err, order) {
+findOrderByAddr = function (addr, res) {
+    Order.findOne({ userAddrFrom: addr }).exec(function (err, order) {
         if (err)
             return myErrorHandler("findOrderByAddr exec1: " + err.message, res);
         if (order == null) {
-            Order.findOne({ userAddrTo: addr }).exec(function(err, order) {
+            Order.findOne({ userAddrTo: addr }).exec(function (err, order) {
                 if (err)
                     return myErrorHandler("findOrderByAddr exec2: " + err.message, res);
                 if (order == null)

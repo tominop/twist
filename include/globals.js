@@ -52,8 +52,8 @@ global.invalidSymbolAddr = function(symbol) {
 };
 
 global.invalidValue = function(symbol, value) {
-    error = invalidData(value) || (valueToFix(coins[symbol].price * value) > twist.maxlimit);
-    error = error || (valueToFix(coins[symbol].price * value) < twist.minlimit);
+    error = invalidData(value) || (valueToFix(coins[symbol].price * value) > twist.maxLimit);
+    error = error || (valueToFix(coins[symbol].price * value) < twist.minLimit);
     return error;
 };
 
