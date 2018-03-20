@@ -1,6 +1,7 @@
 //  file order_utils.js
 //  local variables and function for order.js routes of twist exchange
 const Order = require("../models/orders"),
+    ArhOrder = require("../models/orders"),
     TX = require("../models/transactions");
 
 newOrder = function(data, res) {
@@ -66,7 +67,7 @@ eXecute = function(order) {
         url +
         "waitTwistTx/" +
         JSON.stringify({
-            addr: order.exchangeAddrTo,
+            addrs: order.exchangeAddrTo,
             confirms: coins[order.symbolFrom].confirmations
         });
     var myInterval;
@@ -98,7 +99,7 @@ eXecute = function(order) {
                 order.exchangeTxId +
                 " service " +
                 order.symbolFrom +
-                 err.message
+                err.message
             );
         });
 };
@@ -248,11 +249,17 @@ makeTxTo = function(order) {
                     );
                     order.status = 7;
                     order.confirmTxTo = true;
-                    order.save(function(err) {
+                    arhorder = new ArhOrder(order);
+                    arhorder.save(function(err) {
                         if (err)
                             return myErrorHandler(
-                                "makeTxTo: exec order " + order.exchangeTxId + " save1, " + err.message
+                                "makeTxTo: exec order " + order.exchangeTxId + " arhorder save, " + err.message
                             );
+                    });
+                    order.remove(function(err) {
+                        if (err)
+                            return myErrorHandler("makeTxTo: order " + order.exchangeTxId +
+                                +" remove, " + err.message, res);
                     });
                     console.log(
                         timeNow() + " exec order " + order.exchangeTxId + " finished!"
