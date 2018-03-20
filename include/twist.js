@@ -6,5 +6,8 @@ module.exports = {
     priceApiUrl: 'http://159.65.20.8:3000/bitfinex/',
     ttl: 10, //    order's life time  - time for waiting transaction from User (in minutes) 
     mode: 'dev',
-    fee: 0
+    minlimit = 10, // 
+    maxlimit = 200, // 
+    fee: 0,
+    fix: 5 //  количество значащих цифр
 }

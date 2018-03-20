@@ -11,7 +11,7 @@ const OrderSchema = new Schema({
     createDateUTC: Number,
     ttl: Number,
     status: Number,
-    exchangeRate: Number,
+    exchangeRatio: Number,
     userID: String,
     userAddrFrom: String,
     symbolFrom: String,
@@ -25,7 +25,9 @@ const OrderSchema = new Schema({
     confirmTxTo: Boolean,
     exchangeAddrTo: String,
     symbol: String,
-    amount: Number
+    amount: Number,
+    received: Number,
+    sends: Number
 });
 
 //Export function to create "SomeModel" model class

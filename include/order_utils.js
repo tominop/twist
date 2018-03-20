@@ -8,10 +8,10 @@ newOrder = function(data, res) {
     const userID = data.userID,
         userAddrFrom = data.userAddrFrom,
         symbolFrom = data.symbolFrom,
-        valueFrom = data.valueFrom,
+        valueFrom = valueToFix(data.valueFrom),
         userAddrTo = data.userAddrTo,
         symbolTo = data.symbolTo,
-        valueTo = data.valueTo;
+        valueTofromUser = valueToFix(data.valueTo);
     Order.findOne({ userID: userID }).exec(function(err, order) {
         if (err)
             return myErrorHandler("newOrder: order.findOne promise1 " + err.message, res);
@@ -20,13 +20,14 @@ newOrder = function(data, res) {
                 "newOrder: user have executed order ID " + order.exchangeTxId,
                 res
             );
-        const time = new Date().getTime();
+        const time = new Date().getTime(),
+            ratio = valueToFix(coins[symbolTo].price / coins[symbolFrom].price);
         var order = new Order({
             exchangeTxId: time.toString(),
             createDateUTC: time,
             ttl: twist.ttl,
             status: 1,
-            exchangeRate: coins[symbolTo].price / coins[symbolFrom].price,
+            exchangeRatio: raito,
             userID: userID,
             userAddrFrom: userAddrFrom,
             symbolFrom: symbolFrom,
@@ -35,12 +36,14 @@ newOrder = function(data, res) {
             confirmTxFrom: false,
             userAddrTo: userAddrTo,
             symbolTo: symbolTo,
-            valueTo: valueTo,
+            valueTo: valueToFix(valueFrom * ratio),
             hashTxTo: "",
             confirmTxTo: false,
             exchangeAddrTo: coins[symbolFrom].addressTo,
             symbol: symbolFrom,
-            amount: valueFrom
+            amount: valueFrom,
+            recieved: 0,
+            sends: 0
         });
         order.save(function(err) {
             if (err)
@@ -165,6 +168,7 @@ findTxFrom = function(order, interval, timeout) {
             else if (order.status < 4 && incTx.confirms >= numConfirmations) {
                 order.status = 4;
                 order.confirmTxFrom = true;
+                order.recieved = incTx.value;
                 console.log(
                     timeNow() +
                     "exec order " +
@@ -185,21 +189,19 @@ findTxFrom = function(order, interval, timeout) {
             });
             if (order.status == 4) {
                 incTx.remove(function(err) {
-                    if (err)
-                        return myErrorHandler(
-                            "findTxFrom: exec order " +
-                            order.exchangeTxId +
-                            "Tx " +
-                            incTx.hash +
-                            " remove, " +
-                            err.message,
-                            res
-                        );
-                    else {
-                        clearTimeout(timeout);
-                        clearInterval(interval);
-                        makeTxTo(order);
-                    }
+                    if (err) myErrorHandler(
+                        "findTxFrom: exec order " +
+                        order.exchangeTxId +
+                        "Tx " +
+                        incTx.hash +
+                        " remove, " +
+                        err.message,
+                        res
+                    );
+                    clearTimeout(timeout);
+                    clearInterval(interval);
+                    makeTxTo(order);
+
                 });
             }
         }
@@ -217,7 +219,7 @@ makeTxTo = function(order) {
     var jsonData = JSON.stringify({
         from: coins[order.symbolFrom].walletFrom, // account name in eth microservice
         to: order.userAddrTo,
-        value: order.valueTo * 10 ** 18
+        value: valueToFix(order.recieved * order.exchangeRatio)
     });
     axios
         .get(coins[order.symbolTo].api + "makeTxAddrs/" + jsonData) // 
@@ -249,7 +251,8 @@ makeTxTo = function(order) {
                     );
                     order.status = 7;
                     order.confirmTxTo = true;
-                    arhorder = new ArhOrder(order);
+                    order.sends =
+                        arhorder = new ArhOrder(order);
                     arhorder.save(function(err) {
                         if (err)
                             return myErrorHandler(

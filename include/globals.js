@@ -30,6 +30,10 @@ global.timeNow = function() {
     );
 };
 
+global.valueToFix = function(value) {
+    return parseFloat(value.toPrecision(twist.fix))
+}
+
 global.invalidData = function(data) {
     return (data == undefined || data == '' || data == null);
 };
@@ -45,6 +49,12 @@ global.invalidUserID = function(uid) {
 
 global.invalidSymbolAddr = function(symbol) {
     return (invalidData(symbol) || (symbol != 'ETH' && symbol != 'BTC'));
+};
+
+global.invalidValue = function(symbol, value) {
+    error = invalidData(value) || (valueToFix(coins[symbol].price * value) > twist.maxlimit);
+    error = error || (valueToFix(coins[symbol].price * value) < twist.minlimit);
+    return error;
 };
 
 global.invalidAddr = function(symbol, addr) {
