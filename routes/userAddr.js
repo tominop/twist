@@ -8,7 +8,7 @@ require('../include/uar_utils');
 app.get('/twist/newuser/:uid', function(req, res) {
     const userID = req.params.uid;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res)
-    axios.all([uarFunc(coins.YODA.api + 'uar/newuser/' + userID)])
+    axios.all([uarFunc(coins['YODA'].api + 'uar/newuser/' + userID)])
         .then(function(ureg) {
             if (ureg) {
                 if (ureg.status == 200) return res.json({ error: false, hash: ureg.data.hash });
@@ -26,7 +26,7 @@ app.post('/twist/setuser', function(req, res) {
         userStatus = req.body.userStatus;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res)
     if (invalidUserStatus(userStatus)) return myErrorHandler('invalid userStatus', res)
-    axios.all([uarFunc(coins.YODA.api + 'uar/setuser/' + userID + '-' + userStatus)])
+    axios.all([uarFunc(coins['YODA'].api + 'uar/setuser/' + userID + '-' + userStatus)])
         .then(function(ureg) {
             if (ureg) {
                 if (ureg.status == 200) return res.json({ error: false, hash: ureg.data.hash });
@@ -47,7 +47,7 @@ app.post('/twist/iuban', function(req, res) {
     if (invalidSymbolAddr(symbolAddr)) return myErrorHandler('invalid symbol', res);
     if (invalidAddr(symbolAddr, userAddr)) return myErrorHandler('invalid address', res);
     symbolAddr = symbolConvert(symbolAddr);
-    axios.all([uarFunc(coins.YODA.api + 'uar/checkuser/' + userID), uarFunc(coins.YODA.api + 'uar/checkaddrs/' + symbolAddr + userAddr)])
+    axios.all([uarFunc(coins['YODA'].api + 'uar/checkuser/' + userID), uarFunc(coins['YODA'].api + 'uar/checkaddrs/' + symbolAddr + userAddr)])
         .then(axios.spread(function(uban, aban) { // Both requests are now complete
             if (uban && aban) {
                 if (uban.status == 200 && aban.status == 200) return res.json({ error: false, userBanned: (uban.data.status == '9'), addrBanned: (aban.data.status == '9') });
@@ -63,7 +63,7 @@ app.post('/twist/iuban', function(req, res) {
 app.get('/twist/iuban/:uid', function(req, res) {
     const userID = req.params.uid;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res);
-    axios.all([uarFunc(coins.YODA.api + 'uar/checkuser/' + userID)])
+    axios.all([uarFunc(coins['YODA'].api + 'uar/checkuser/' + userID)])
         .then(function(uban) {
             if (uban) {
                 if (uban.status = 200) return res.json({ error: false, userBanned: (uban.data.status == '9') });
