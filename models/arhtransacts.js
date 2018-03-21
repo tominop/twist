@@ -17,4 +17,4 @@ const TxSchema = new Schema({
 });
 
 //Export function to create "SomeModel" model class 
-module.exports = mongoose.model('Tx', TxSchema);
+module.exports = mongoose.model('ArhTx', TxSchema);

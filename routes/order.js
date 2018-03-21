@@ -17,11 +17,42 @@ app.post("/twist/neworder", function(req, res) {
     newOrder(req.body, res);
 });
 
-//  Route - orderStatusCheck() function
+//  Route - getOrderByID() function
 app.get("/twist/order/:orderID", function(req, res) {
     if (invalidData(req.params.orderID))
         return myErrorHandler("orderStatusCheck: invalid order ID", res);
     findOrderByID(req.params.orderID, res);
+});
+
+//  Route - getOrders() function
+app.get("/twist/orders", function(req, res) {
+    getOrders(res);
+});
+
+//  Route - arhOrderByID() function
+app.get("/twist/arhorder/:orderID", function(req, res) {
+    if (invalidData(req.params.orderID))
+        return myErrorHandler("arhorder: invalid order ID", res);
+    arhOrderByID(req.params.orderID, res);
+});
+
+//  Route - getTxs() function
+app.get("/twist/txs", function(req, res) {
+    getTxs(res);
+});
+
+//  Route - arhTxByID() function
+app.get("/twist/arhtx/:orderID", function(req, res) {
+    if (invalidData(req.params.orderID))
+        return myErrorHandler("arhtx: invalid order ID", res);
+    arhTxByID(req.params.orderID, res);
+});
+
+//  Route - arhTxByAddr() function
+app.get("/twist/arhaddrtx/:addrs", function(req, res) {
+    if (invalidData(req.params.addrs))
+        return myErrorHandler("arhtx: invalid address", res);
+    arhTxByAddr(req.params.addrs, res);
 });
 
 //  Route - setOrderStatus() function

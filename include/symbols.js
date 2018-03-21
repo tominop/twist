@@ -53,7 +53,7 @@ getPrice = function(coin, base) {
 };
 
 getReserv = function(coin) {
-    coins[coin].reserv = 0;
+    //    coins[coin].reserv = 0;
     coinUpdated(coin);
 };
 
@@ -69,7 +69,7 @@ var timerCheck = setTimeout(function check() {
         coins[coin].balance = 0;
         coins[coin].minerFee = 0;
         coins[coin].price = 0;
-        coins[coin].reserv = 0;
+        //        coins[coin].reserv = 0;
         getPrice(coin, 'USD');
         getBalance(coin);
         getReserv(coin);
