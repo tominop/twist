@@ -380,7 +380,7 @@ findOrderByID = function(oid, res) {
 getOrders = function(res) {
     Order.find({}).exec(function(err, orders) {
         if (err) return myErrorHandler("getOrders exec: " + err.message, res);
-        if (orders == null) return myErrorHandler("orders not foud", res);
+        if (orders == null || orders[0] == null) return myErrorHandler("orders not foud", res);
         res.json({
             error: false,
             orders: orders
