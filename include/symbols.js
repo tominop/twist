@@ -32,21 +32,23 @@ getPrice = function(coin, base) {
     axios.get(twist.priceApiUrl + coins[coin].symbol + base)
         .then(function(response) {
             if (response) {
+                var k = 1;
                 if (response.status == 200) {
+                    if (new Date().getTime() - Date.parse(response.data.uptime) > twist.ttlPrice * 60000) k = 0;
                     if (isYODA) {
                         coin = 'YODA';
-                        coins[coin].price = valueToFix(response.data.price / 1000);
-                    } else coins[coin].price = valueToFix(response.data.price);
+                        coins[coin].price = valueToFix(response.data.price / 1000 * k);
+                    } else coins[coin].price = valueToFix(response.data.price * k);
                     coinUpdated(coin);
                     return
                 };
             };
             myErrorHandler('getPrice: invalid response from price service for pair ' + coins[coin].symbol + base);
-            coins[coin].enabled = false;
+            coins[coin].price = 0;
             coinUpdated(coin);
         })
         .catch(function(error) {
-            coins[coin].enabled = false;
+            coins[coin].price = 0;
             myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + error.message);
             coinUpdated(coin);
         });

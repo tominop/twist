@@ -16,16 +16,20 @@ newOrder = function(data, res) {
     const ratio = valueToFix(coins[symbolTo].price / coins[symbolFrom].price);
     const valueTo = valueToFix(valueFrom / ratio);
     if (!coins[symbolFrom].canReceive)
-        return myErrorHandler(
-            "newOrder: " + symbolFrom + " twist can not receive",
-            res
-        );
+        return myErrorHandler("newOrder: twist can not receive " + symbolFrom, res);
     if (!coins[symbolTo].canSend)
-        return myErrorHandler("newOrder: " + symbolTo + " twist can not send", res);
+        return myErrorHandler("newOrder: twist can not send" + symbolTo, res);
     if (!coins[symbolFrom].enabled)
         return myErrorHandler("newOrder: " + symbolFrom + " api not enabled", res);
+    if (coins[symbolFrom].price == 0)
+        return myErrorHandler(
+            "newOrder: " + symbolFrom + " price not enabled",
+            res
+        );
     if (!coins[symbolTo].enabled)
         return myErrorHandler("newOrder: " + symbolTo + " api not enabled", res);
+    if (coins[symbolTo].price == 0)
+        return myErrorHandler("newOrder: " + symbolTo + " price not enabled", res);
     if (
         coins[symbolTo].balance <
         valueTo + coins[symbolTo].minerFee + coins[symbolTo].reserv
@@ -47,7 +51,7 @@ newOrder = function(data, res) {
             exchangeTxId: time.toString(),
             createDateUTC: time,
             ttl: twist.ttl,
-            status: 1,
+            status: { code: 1, human: twist.humans[1], data: { time: timeNow() } },
             exchangeRatio: ratio,
             userID: userID,
             userAddrFrom: userAddrFrom,
@@ -64,7 +68,7 @@ newOrder = function(data, res) {
             symbol: symbolFrom,
             amount: valueFrom,
             received: 0.0,
-            sends: 0.0
+            sent: 0.0
         });
         coins[symbolTo].reserv = coins[symbolTo].reserv + valueTo;
         order.save(function(err) {
@@ -117,8 +121,10 @@ eXecute = function(order) {
         )
         .then(resp => {
             error = resp.data.error;
-            if (error) myErrorHandler("waiting tx to address " +
-                resp.data.address + " not starts")
+            if (error)
+                myErrorHandler(
+                    "waiting tx to address " + resp.data.address + " not starts"
+                );
             console.log(
                 " eXecute: exec order " +
                 order.exchangeTxId +
@@ -156,7 +162,11 @@ waitTxFrom = function(order) {
             " not receaved in ttl period"
         );
         incomingTxStop(order);
-        order.status = 8;
+        order.status = {
+            code: 7,
+            human: twist.humans[7],
+            data: { reason: "deposit not received in " + twist.ttl + "min. period" }
+        };
         order.save(function(err) {
             if (err)
                 return myErrorHandler(
@@ -183,8 +193,15 @@ findTxFrom = function(order, interval, timeout) {
                 err.message
             );
         if (incTx != null) {
-            if (incTx.confirms == 0 && order.status == 1) {
-                order.status = 2;
+            if (incTx.confirms == 0 && order.status.code == 1) {
+                order.status = {
+                    code: 2,
+                    human: twist.humans[2],
+                    data: {
+                        confirmations: incTx.confirms,
+                        wait: coins[order.symbolFrom].confirmations
+                    }
+                };
                 console.log(
                     timeNow() +
                     " findTxFrom: exec order " +
@@ -195,16 +212,27 @@ findTxFrom = function(order, interval, timeout) {
                     incTx.confirms
                 );
             } else if (
-                order.status < 3 &&
+                order.status.code < 3 &&
                 incTx.confirms > 0 &&
                 incTx.confirms < coins[order.symbolFrom].confirmations
             )
-                order.status = 3;
+                order.status = {
+                    code: 2,
+                    human: twist.humans[2],
+                    data: {
+                        confirmations: incTx.confirms,
+                        wait: coins[order.symbolFrom].confirmations
+                    }
+                };
             else if (
-                order.status < 4 &&
+                order.status.code < 3 &&
                 incTx.confirms >= coins[order.symbolFrom].confirmations
             ) {
-                order.status = 4;
+                order.status = {
+                    code: 3,
+                    human: twist.humans[3],
+                    data: { time: timeNow() }
+                };
                 order.confirmTxFrom = true;
                 order.received = incTx.value;
                 console.log(
@@ -229,7 +257,7 @@ findTxFrom = function(order, interval, timeout) {
                         res
                     );
             });
-            if (order.status >= 4) {
+            if (order.status.code >= 3) {
                 incTx.orderID = order.exchangeTxId;
                 incTx.save(function(err) {
                     if (err)
@@ -237,7 +265,8 @@ findTxFrom = function(order, interval, timeout) {
                             "findTxFrom: exec order " +
                             order.exchangeTxId +
                             " save Order error - " +
-                            err.message);
+                            err.message
+                        );
                 });
                 arhTx(incTx);
                 incomingTxStop(order);
@@ -305,7 +334,11 @@ makeTxTo = function(order) {
     axios
         .get(coins[order.symbolTo].api + "makeTxAddrs/" + jsonData) //
         .then(function(outTx) {
-            order.status = 5;
+            order.status = {
+                code: 4,
+                human: twist.humans[4],
+                data: { hash: outTx.data.hash }
+            };
             order.hashTxTo = outTx.data.hash;
             order.save(function(err) {
                 if (err)
@@ -322,7 +355,7 @@ makeTxTo = function(order) {
                 order.exchangeTxId +
                 ": to user Tx hash " +
                 order.hashTxTo
-            );
+            ); //  !!!TODO correct awat Tx to user
             axios
                 .get(coins[order.symbolTo].api + "waitTx/" + outTx.data.hash)
                 .then(function(h) {
@@ -335,9 +368,13 @@ makeTxTo = function(order) {
                         " Tx confirmed in block " +
                         h.data.block
                     );
-                    order.status = 7;
+                    order.status = {
+                        code: 6,
+                        human: twist.humans[6],
+                        data: { time: timeNow() }
+                    };
                     order.confirmTxTo = true;
-                    order.sends = valueFact;
+                    order.sent = valueFact;
                     arhOrder(order);
                     console.log(
                         timeNow() + " exec order " + order.exchangeTxId + " finished!"
@@ -369,18 +406,30 @@ makeTxTo = function(order) {
 findOrderByID = function(oid, res) {
     Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
         if (err) return myErrorHandler("getOrderByID exec: " + err.message, res);
-        if (order == null) return myErrorHandler("order not foud", res);
-        res.json({
-            error: false,
-            order: order
-        });
+        if (order == null) {
+            ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
+                if (err)
+                    return myErrorHandler("getOrderByID exec: " + err.message, res);
+                if (order == null) return myErrorHandler("order not foud", res);
+                res.json({
+                    error: false,
+                    order: order
+                });
+            });
+        } else {
+            res.json({
+                error: false,
+                order: order
+            });
+        }
     });
 };
 
 getOrders = function(res) {
     Order.find({}).exec(function(err, orders) {
         if (err) return myErrorHandler("getOrders exec: " + err.message, res);
-        if (orders == null || orders[0] == null) return myErrorHandler("orders not foud", res);
+        if (orders == null || orders[0] == null)
+            return myErrorHandler("orders not foud", res);
         res.json({
             error: false,
             orders: orders
@@ -418,7 +467,7 @@ arhOrder = function(order, res) {
         symbol: order.symbol,
         amount: order.amount,
         received: order.received,
-        sends: order.sends
+        sent: order.sent
     });
     arhorder.save(function(err) {
         if (err)
@@ -472,7 +521,8 @@ findOrderByAddr = function(addr, res) {
 getTxs = function(res) {
     TX.find({}).exec(function(err, txs) {
         if (err) return myErrorHandler("getTx exec: " + err.message, res);
-        if (txs == null || txs[0] == null) return myErrorHandler("transactions not foud", res);
+        if (txs == null || txs[0] == null)
+            return myErrorHandler("transactions not foud", res);
         res.json({
             error: false,
             txs: txs
@@ -488,7 +538,6 @@ arhTxByID = function(oid, res) {
     });
 };
 
-
 arhTxByAddr = function(addrs, res) {
     TX.findOne({ addrFrom: addrs }).exec(function(err, tx) {
         if (err) return myErrorHandler("arhTxByAddr exec: " + err.message, res);
@@ -496,7 +545,6 @@ arhTxByAddr = function(addrs, res) {
         arhTx(tx, res);
     });
 };
-
 
 arhTx = function(tx, res) {
     arhtx = new ArhTx({
