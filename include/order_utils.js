@@ -3,7 +3,8 @@
 const Order = require("../models/orders"),
     ArhOrder = require("../models/arhorders"),
     TX = require("../models/transactions"),
-    ArhTx = require("../models/arhtransacts");
+    ArhTx = require("../models/arhtransacts"),
+    providers = require("./providers");
 
 newOrder = function(data, res) {
     const userID = data.userID,
@@ -100,47 +101,50 @@ eXecute = function(order) {
             order.exchangeTxId +
             ": service " +
             order.symbolFrom +
-            " error2"
+            " not aviable"
         );
-    }, 20000);
+    }, 60000);
     myInterval = setInterval(function() {
         if (!error) {
             waitTxFrom(order);
             clearInterval(myInterval);
             clearTimeout(timeOut);
         }
-    }, 2000);
-    axios
-        .get(
-            url +
-            "waitTwistTx/" +
-            JSON.stringify({
-                addrs: order.exchangeAddrTo,
-                confirms: coins[order.symbolFrom].confirmations
-            })
-        )
-        .then(resp => {
-            error = resp.data.error;
-            if (error)
-                myErrorHandler(
-                    "waiting tx to address " + resp.data.address + " not starts"
-                );
-            console.log(
-                " eXecute: exec order " +
-                order.exchangeTxId +
-                " wait tx to address " +
-                resp.data.address
-            );
+    }, 10000);
+    error = runMetod('startAwaitTx', order);
+};
+
+axios
+    .get(
+        url +
+        "waitTwistTx/" +
+        JSON.stringify({
+            addrs: order.exchangeAddrTo,
+            confirms: coins[order.symbolFrom].confirmations
         })
-        .catch(err => {
+    )
+    .then(resp => {
+        error = resp.data.error;
+        if (error)
             myErrorHandler(
-                "eXecute: exec order " +
-                order.exchangeTxId +
-                " service " +
-                order.symbolFrom +
-                err.message
+                "waiting tx to address " + resp.data.address + " not starts"
             );
-        });
+        console.log(
+            " eXecute: exec order " +
+            order.exchangeTxId +
+            " wait tx to address " +
+            resp.data.address
+        );
+    })
+    .catch(err => {
+        myErrorHandler(
+            "eXecute: exec order " +
+            order.exchangeTxId +
+            " service " +
+            order.symbolFrom +
+            err.message
+        );
+    });
 };
 
 waitTxFrom = function(order) {
@@ -176,6 +180,7 @@ waitTxFrom = function(order) {
                     err.message,
                     res
                 );
+            arhOrder(order);
         });
     }, order.ttl * 60000);
     myInterval = setInterval(function() {
@@ -576,3 +581,31 @@ arhTx = function(tx, res) {
             arhtx: arhtx
         });
 };
+
+runMetod = function(metod, data) {
+    for (member in providers) {
+        if (providers[member].helth) {
+            if (wait(providers[member][metod], data)) return true
+            else providers[member].helth = false;
+        }
+        return false;
+    }
+}
+
+function wait(func, data) {
+    async(func, data) => {
+        try { response = func(data) } catch (error) {
+            myErrorHandler(func + ': ' + error.message)
+        }
+    }
+    setTimeout(() => {
+        if (!response) return false
+        else return true
+    }, 2000)
+}
+
+const providers = {
+    btc1: { helth: false, startAwaitTx: waitTxBtc1 },
+    btc2: { helth: false, startAwaitTx: waitTxBtc1 },
+    btc3: { helth: false, startAwaitTx: waitTxBtc1 },
+}
