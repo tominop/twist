@@ -10,7 +10,7 @@ module.exports = {
     ttlPrice: 5, //    prices life time  - time period valid price (in minutes)
     helthCheckPeriod: 50, // helth check period - check interval (in minutes)
     coinsCheckPeriod: 5, // coins check period - check interval (in minutes)
-    orderCheckPeriod: 5, // new order check period - check interval (in minutes)
+    orderCheckPeriod: 1, // new order check period - check interval (in minutes)
     waitConfirmPeriod: 60, // awaiting deposit confirmation period (in minutes)
     mode: 'development', // default
     minLimit: 1.0, // 

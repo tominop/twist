@@ -11,6 +11,7 @@ module.exports = {
     },
 
     setCallPeriod: function (func, timeout, param, cb) {
+        func(param, cb);
         var timerCheck = setTimeout(function check() {
             func(param, cb);
             timerCheck = setTimeout(check, timeout * 60000);
@@ -35,15 +36,17 @@ module.exports = {
     },
 
     orderCheck: async function () {
-        orders = await tools.getNewOrders();
+        var orders = await tools.getNewOrders();
+        mess('orderCheck', orders);
         for (order in orders) {
-            if (order.status.code = 0) exec.takeOrder(order)
-            else if (order.status.code = 1) exec.checkDepositStatus(order)    //  => if 
-            else if (order.status.code = 2) exec.checkDepositStatus(order)
-            else if (order.status.code = 3) exec.makeRefund(order)
-            else if (order.status.code = 4) exec.waitRefundConfirm(order)
-            else if (order.status.code = 5) exec.checkRefundProvider(order)
-            else if (order.status.code > 5) exec.arhivate(order);
+            mess('orderCheck', orders[order]);
+            if (orders[order].status.code == 0) exec.takeOrder(orders[order])
+            else if (orders[order].status.code == 1) exec.checkDepositStatus(orders[order])    //  => if 
+            else if (orders[order].status.code == 2) exec.checkDepositStatus(orders[order])
+            else if (orders[order].status.code == 3) exec.makeRefund(orders[order])
+            else if (orders[order].status.code == 4) exec.waitRefundConfirm(orders[order])
+            else if (orders[order].status.code == 5) exec.checkRefundStatus(orders[order])
+            else if (orders[order].status.code > 5) tools.arhOrder(orders[order]);
         }
     }
 }

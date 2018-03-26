@@ -8,5 +8,5 @@ app.use(function(req, res) {
 
 //  all error handler
 app.use(function(err, req, res, next) {
-    myErrorHandler(('twist api service :' + err.message), res);
+    myErrorHandler(('twist api service :' + err), res);
 });

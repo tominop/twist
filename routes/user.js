@@ -16,7 +16,7 @@ app.get('/twist/newuser/:uid', function(req, res) {
             myErrorHandler('smart contract UserAddrReg(newuser): invalid response', res);
         })
         .catch((err) => {
-            myErrorHandler('smart contract UserAddrReg(newuser): ' + err.message, res);
+            myErrorHandler('smart contract UserAddrReg(newuser): ' + err, res);
         });
 });
 
@@ -34,7 +34,7 @@ app.post('/twist/setuser', function(req, res) {
             myErrorHandler('smart contract UserAddrReg(setuser): invalid response', res);
         })
         .catch((err) => {
-            myErrorHandler('smart contract UserAddrReg(setuser): ' + err.message, res);
+            myErrorHandler('smart contract UserAddrReg(setuser): ' + err, res);
         });
 });
 
@@ -55,7 +55,7 @@ app.post('/twist/iuban', function(req, res) {
             myErrorHandler('smart contract UserAddrReg(iuban): invalid response', res);
         }))
         .catch((err) => {
-            myErrorHandler('smart contract UserAddrReg(iuban): ' + err.message, res);
+            myErrorHandler('smart contract UserAddrReg(iuban): ' + err, res);
         });
 });
 
@@ -71,6 +71,6 @@ app.get('/twist/iuban/:uid', function(req, res) {
             myErrorHandler('smart contract UserAddrReg(uid): invalid response', res);
         })
         .catch((err) => {
-            myErrorHandler('smart contract UserAddrReg(uid): ' + error.message, res);
+            myErrorHandler('smart contract UserAddrReg(uid): ' + error, res);
         });
 });

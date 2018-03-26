@@ -6,7 +6,7 @@ module.exports = {
     apiCall: function(url) {
         return axios.get(url)
             .catch((err) => {
-                myErrorHandler('user.apiCall: ' + err.message)
+                myErrorHandler('user.apiCall: ' + err)
             });
     },
 

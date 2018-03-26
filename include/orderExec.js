@@ -35,7 +35,7 @@ module.exports = {
         Order.findOne({ userID: userID }).exec(function(err, order) {
             if (err)
                 return myErrorHandler(
-                    'newOrder: order.findOne promise1 ' + err.message,
+                    'newOrder: order.findOne promise1 ' + err,
                     res
                 );
             if (order != null)
@@ -71,7 +71,7 @@ module.exports = {
             order.save(function(err) {
                 if (err)
                     return myErrorHandler(
-                        'newOrder: order ID ' + order.exchangeTxId + ' save1 ' + err.message,
+                        'newOrder: order ID ' + order.exchangeTxId + ' save1 ' + err,
                         res
                     );
                 // Order is saved to DB
@@ -141,7 +141,7 @@ module.exports = {
                 myErrorHandler('findTxFrom: exec order ' +
                     order.exchangeTxId +
                     ' Tx find, ' +
-                    err.message
+                    err
                 )
             });
         if (incTx = null) return;
@@ -215,13 +215,13 @@ module.exports = {
                     ' Tx to ' +
                     order.exchangeAddrTo +
                     ' stop error - ' +
-                    err.message
+                    err
                 );
             });
     },
 
-    /// TODO !!!
-    makeTxTo: function(order) {
+/// TODO !!!
+    makeRefund: function(order) {
         var change,
             valueFact = valueToFix(order.received / order.exchangeRatio);
         change = valueToFix(
@@ -265,7 +265,7 @@ module.exports = {
                             'makeTxTo: exec order ' +
                             order.exchangeTxId +
                             ' save, ' +
-                            err.message
+                            err
                         );
                 });
                 console.log(
@@ -306,7 +306,7 @@ module.exports = {
                             ' Tx to ' +
                             order.userAddrFrom +
                             ' not confirmed, ' +
-                            err.message
+                            err
                         );
                     });
             })
@@ -317,9 +317,50 @@ module.exports = {
                     ': Tx to ' +
                     order.userAddrFrom +
                     ' not created, ' +
-                    err.message
+                    err
                 );
             });
+    },
+
+//  TODO!!!!!
+    waitRefund: function(order) {
+        mess('waitDeposit', 'order ' +
+            order.exchangeTxId +
+            ' : awaiting deposit starts');
+        var myInterval;
+        var ttlTimeOut = setTimeout(function() {
+            clearInterval(myInterval);
+            exec.awaitDepositStop(order);
+            myErrorHandler(
+                'waitDeposit: order ' +
+                order.exchangeTxId +
+                ' deposit from ' +
+                order.userAddrFrom +
+                ' not receaved in ttl period'
+            );
+            tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
+        }, order.ttl * 60000);
+        myInterval = setInterval(function() {
+            if (!order.waitDepositProvider == '')
+                exec.findTxFrom(order, myInterval, ttlTimeOut)
+            else {
+                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
+            }
+        }, 20000);
+    },
+
+//  TODO!!!!!
+checkRefundStatus: async function(order) {
+        if (coins[order.symbolFrom].canReceive) {
+            res = await methods.runMethod('awaitDeposit', 'check', order)
+            if (!res.error) return
+                //  need restart awaitDeposit
+            res = await methods.runMethod('awaitDeposit', 'start', order);
+            if (res.error) order.waitDepositProvider = ''
+            else order.waitDepositProvider = res.provider;
+        } else order.waitDepositProvider = '';
+        tools.saveOrder(order, 'checkRefundStatus');
     }
+    
 
 }

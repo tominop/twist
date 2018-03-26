@@ -1,9 +1,11 @@
 //  file order.js
 //  add/check/set/execute order functions routes
 
+//  global variables
 Order = require("../models/orders");
 ArhOrder = require("../models/arhorders");
 
+//  global functions
 methods = require("../include/orderApiUtils");
 tools = require("../include/mongoUtils");
 exec = require("../include/orderExec");
@@ -65,6 +67,6 @@ app.get("/twist/addr/:addr", function(req, res) {
 //  deleteOrderByID() route
 app.get("/twist/deleteorder/:orderID", function(req, res) {
     if (invalidData(req.params.orderID))
-        return myErrorHandler("arhorder: invalid order ID", res);
+        return myErrorHandler("deleterder: invalid order ID", res);
         tools.deleteOrderByID(req.params.orderID, res);
 });

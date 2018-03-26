@@ -19,7 +19,7 @@ module.exports = {
                 return { error: false, method: method + coin };
             }
             [coins][coin][coinStatus] = false;
-            myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res.message);
+            myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res);
         };
         myErrorHandler('runMethod ' + method + coin + ' ' + action + ' not aviable');
         return { error: true, message: method + ' ' + action + ' not aviable' };
@@ -55,7 +55,7 @@ module.exports = {
                 order.exchangeTxId +
                 " service " +
                 order.symbolFrom +
-                err.message
+                err
             );
         });
     },

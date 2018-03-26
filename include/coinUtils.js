@@ -18,7 +18,7 @@ module.exports = {
                 this.cb(coin);
             })
             .catch((err) => {
-                myErrorHandler('getBalance: service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error' + err.message);
+                myErrorHandler('getBalance: service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error' + err);
                 coins[coin].enabled = false;
                 cb(coin);
             });
@@ -47,7 +47,7 @@ module.exports = {
             })
             .catch((err) => {
                 coins[coin].price = 0;
-                myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + err.message);
+                myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + err);
                 cb(coin);
             });
     },
