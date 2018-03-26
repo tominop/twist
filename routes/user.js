@@ -1,14 +1,14 @@
-//  file userAddr.js
-//  add/check/set user, address functions routes
+//  file user.js
+//  add/check/set user, address routes
 
-//  Load local parameters and functions 
-require('../include/uar_utils');
+//  Load user functions 
+user = require('../include/userUtils');
 
-//  Route - SC UserAddrReg: newUser(uID) function 
+//  SC UserAddrReg: newUser(uID) route 
 app.get('/twist/newuser/:uid', function(req, res) {
     const userID = req.params.uid;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res)
-    uarFunc(coins['YODA'].api + 'uar/newuser/' + userID)
+    user.apiCall(coins['YODA'].api + 'uar/newuser/' + userID)
         .then(function(ureg) {
             if (ureg) {
                 if (ureg.status == 200) return res.json({ error: false, hash: ureg.data.hash });
@@ -20,13 +20,13 @@ app.get('/twist/newuser/:uid', function(req, res) {
         });
 });
 
-//  Route - SC UserAddrReg: setUser(uID, status) function 
+//  SC UserAddrReg: setUser(uID, status) route 
 app.post('/twist/setuser', function(req, res) {
     const userID = req.body.userID,
         userStatus = req.body.userStatus;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res)
     if (invalidUserStatus(userStatus)) return myErrorHandler('invalid userStatus', res)
-    uarFunc(coins['YODA'].api + 'uar/setuser/' + userID + '-' + userStatus)
+    user.apiCall(coins['YODA'].api + 'uar/setuser/' + userID + '-' + userStatus)
         .then(function(ureg) {
             if (ureg) {
                 if (ureg.status == 200) return res.json({ error: false, hash: ureg.data.hash });
@@ -36,9 +36,9 @@ app.post('/twist/setuser', function(req, res) {
         .catch(function(error) {
             myErrorHandler('smart contract UserAddrReg(setuser): ' + error.message, res);
         });
-})
+});
 
-//  Route - userAddrBanCheck() function 
+//  userAddrBanCheck() route 
 app.post('/twist/iuban', function(req, res) {
     const userID = req.body.userID,
         userAddr = req.body.userAddr;
@@ -47,7 +47,7 @@ app.post('/twist/iuban', function(req, res) {
     if (invalidSymbolAddr(symbolAddr)) return myErrorHandler('invalid symbol', res);
     if (invalidAddr(symbolAddr, userAddr)) return myErrorHandler('invalid address', res);
     symbolAddr = symbolConvert(symbolAddr);
-    axios.all([uarFunc(coins['YODA'].api + 'uar/checkuser/' + userID), uarFunc(coins['YODA'].api + 'uar/checkaddrs/' + symbolAddr + userAddr)])
+    axios.all([user.apiCall(coins['YODA'].api + 'uar/checkuser/' + userID), user.apiCall(coins['YODA'].api + 'uar/checkaddrs/' + symbolAddr + userAddr)])
         .then(axios.spread(function(uban, aban) { // Both requests are now complete
             if (uban && aban) {
                 if (uban.status == 200 && aban.status == 200) return res.json({ error: false, userBanned: (uban.data.status == '9'), addrBanned: (aban.data.status == '9') });
@@ -57,13 +57,13 @@ app.post('/twist/iuban', function(req, res) {
         .catch(function(error) {
             myErrorHandler('smart contract UserAddrReg(iuban): ' + error.message, res);
         });
-})
+});
 
-//  Route - userAddrBanCheck() function 
+//  userAddrBanCheck() route 
 app.get('/twist/iuban/:uid', function(req, res) {
     const userID = req.params.uid;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res);
-    uarFunc(coins['YODA'].api + 'uar/checkuser/' + userID)
+    user.apiCall(coins['YODA'].api + 'uar/checkuser/' + userID)
         .then(function(uban) {
             if (uban) {
                 if (uban.status == 200) return res.json({ error: false, userBanned: (uban.data.status == '9') });
@@ -73,4 +73,4 @@ app.get('/twist/iuban/:uid', function(req, res) {
         .catch(function(error) {
             myErrorHandler('smart contract UserAddrReg(uid): ' + error.message, res);
         });
-})
+});

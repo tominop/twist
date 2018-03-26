@@ -14,12 +14,15 @@ app = express();
 //  Load global parameters and functions 
 require('./include/globals');
 
+twist.mode = process.env.MODE || 'development'
+
 //  Configure mongoDB
-const dbConfig = require(twist.mode == 'dev' ? './private/db' : './db'),
+const configDbFile = process.env.DB || twist.mode == 'development' ? './private/db' : './db';
+const dbConfig = require(configDbFile),
     mongoose = require('mongoose');
 
 mongoose.connection.on("open", function(ref) {
-    console.log(timeNow() + " twist service connected to mongo server");
+    mess( 'twist', 'service connected to mongo server');
 });
 
 mongoose.connection.on("error", function(err) {
@@ -57,24 +60,24 @@ app.options("/*", function(req, res, next) {
 //  Configuring express to use body-parser as middle-ware
 app.use(bodyParser.json());
 
-//  Load coin symbols and check aviable api microservices connections
-require('./include/symbols');
-
 //  Load routes (shema without express.router)
-require('./routes/userAddr');
+
+require('./routes/coin');
 require('./routes/order');
+require('./routes/tx');
+require('./routes/user');
+require('./routes/errorHandler');
 
-// catch 404 and forward to error handler
-app.use(function(req, res) {
-    myErrorHandler('\"' + req.url + '\"' + ' route not support', res);
-});
 
-app.use(function(err, req, res, next) {
-    myErrorHandler(('twist api service :' + err.message), res);
-});
+//  Load main functions and start service
+service = require('./include/engine');
 
-const port = process.env.PORT_TWIST || 8900
+service.start();
+
+
+const port = process.env.PORT_TWIST || 8900;
+twist.url = twist.url + ':' + port.toString();
 
 app.listen(port, () => {
-    console.log(timeNow() + ' twist service listening on ' + port.toString())
+    mess('twist', 'service listening on ' + port.toString())
 })

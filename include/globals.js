@@ -4,10 +4,16 @@
 
 global.axios = require('axios'); //  AXIOS - compact lib for HttpRequest
 //global.api = require("./twist_api"); //  microservices url
-global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations  ;
+global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations;
+global.coins = require(twist.mode == 'development' ? '../private/coins' : './coins');
+
 
 
 //  global functions
+
+global.mess = function(name, message) {
+    console.log(timeNow() + name + ': ' + message);
+};
 
 global.myErrorHandler = function(message, res) {
     if (res) res.json({ error: true, response: 'Error: ' + message });
@@ -26,13 +32,25 @@ global.timeNow = function() {
             time.getUTCHours() < 10 ? "0" + time.getUTCHours() : time.getUTCHours(),
             time.getMinutes() < 10 ? "0" + time.getMinutes() : time.getMinutes(),
             time.getSeconds() < 10 ? "0" + time.getSeconds() : time.getSeconds()
-        ].join(":")
+        ].join(":") + [' ']
     );
 };
 
+
+global.wait = async function (timeout) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve()
+        }, timeout)
+    })
+};
+
+
+
 global.valueToFix = function(value) {
     return parseFloat(value.toPrecision(twist.fix))
-}
+};
+
 
 global.invalidData = function(data) {
     return (data == undefined || data == '' || data == null);

@@ -1,7 +1,7 @@
 //  file coin.js
 //  get coin and other sevice functions routes
 
-//  Route - getCions function
+//  getCions route
 app.get("/twist/getcoins", function(req, res) {
     var info = {};
     for (coin in coins) {
@@ -14,10 +14,10 @@ app.get("/twist/getcoins", function(req, res) {
     res.json({ error: false, coins: info });
 });
 
-//  Route - runMethod() function
+//  runMethod() route
 app.get("/twist/runmethod/:data", function(req, res) {
     var data = JSON.parse(req.params.data);
-    console.log('get runMethod command ' + data.name + ' param ' + data.param);
+    mess(' runMethod route', ' get command ' + data.name + ' param ' + data.param);
     methods.runMethod(data.name, data.param)
     .then((response)=>{
         res.json({error: false, result: response});

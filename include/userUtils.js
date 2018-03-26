@@ -3,10 +3,10 @@
 
 module.exports = {
 
-    uarFunc: function (url) {
+    apiCall: function (url) {
         return axios.get(url)
             .catch(function (error) {
-                myErrorHandler('uarFunc: ' + error.message)
+                myErrorHandler('user.apiCall: ' + error.message)
             });
     },
 
