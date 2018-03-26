@@ -2,9 +2,9 @@
 
 module.exports = {
 
-    getBalance: function (coin, cb) {
+    getBalance: function(coin, cb) {
         axios.get(coins[coin].api + 'balanceTwist/' + coins[coin].walletFrom)
-            .then(function (response) {
+            .then(function(response) {
                 if (response) {
                     if (response.status == 200) {
                         coins[coin].balance = response.data.balance;
@@ -17,18 +17,18 @@ module.exports = {
                 coins[coin].enabled = false;
                 this.cb(coin);
             })
-            .catch(function (error) {
-                myErrorHandler('getBalance: service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error' + error.message);
+            .catch((err) => {
+                myErrorHandler('getBalance: service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error' + err.message);
                 coins[coin].enabled = false;
                 cb(coin);
             });
     },
 
-    getPrice: function (coin, base, cb) {
+    getPrice: function(coin, base, cb) {
         const isYODA = coins[coin].symbol === 'YODA';
         if (isYODA) coin = 'ETH';
         axios.get(twist.priceApiUrl + coins[coin].symbol + base)
-            .then(function (response) {
+            .then(function(response) {
                 if (response) {
                     var k = 1;
                     if (response.status == 200) {
@@ -45,19 +45,19 @@ module.exports = {
                 coins[coin].price = 0;
                 cb(coin);
             })
-            .catch(function (error) {
+            .catch((err) => {
                 coins[coin].price = 0;
-                myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + error.message);
+                myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + err.message);
                 cb(coin);
             });
     },
 
-    getReserv: function (coin, cb) {
+    getReserv: function(coin, cb) {
         //    coins[coin].reserv = 0;
         cb(coin);
     },
 
-    coinUpdated: function (coin) {
+    coinUpdated: function(coin) {
         if (++coins[coin].updated === 3) coins[coin].updated = true;
     }
 

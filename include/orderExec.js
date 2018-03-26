@@ -2,7 +2,7 @@
 //  local variables and function for order.js routes of twist exchange
 module.exports = {
 
-    newOrder: function (data, res) {
+    newOrder: function(data, res) {
         const userID = data.userID,
             userAddrFrom = data.userAddrFrom,
             symbolFrom = data.symbolFrom,
@@ -32,7 +32,7 @@ module.exports = {
             valueTo + coins[symbolTo].minerFee + coins[symbolTo].reserv
         )
             return myErrorHandler('newOrder: insufficient funds ' + symbolTo, res);
-        Order.findOne({ userID: userID }).exec(function (err, order) {
+        Order.findOne({ userID: userID }).exec(function(err, order) {
             if (err)
                 return myErrorHandler(
                     'newOrder: order.findOne promise1 ' + err.message,
@@ -68,7 +68,7 @@ module.exports = {
                 sent: 0.0
             });
             coins[symbolTo].reserv = coins[symbolTo].reserv + valueTo;
-            order.save(function (err) {
+            order.save(function(err) {
                 if (err)
                     return myErrorHandler(
                         'newOrder: order ID ' + order.exchangeTxId + ' save1 ' + err.message,
@@ -83,7 +83,7 @@ module.exports = {
         });
     },
 
-    takeOrder: async function (order) {
+    takeOrder: async function(order) {
         if (coins[order.symbolFrom].canReceive) {
             mess('take', 'order ' + order.exchangeTxId + ' exec starts');
             //  Start awaiting deposit (incoming Tx hook service)
@@ -96,12 +96,12 @@ module.exports = {
         };
     },
 
-    waitDeposit: function (order) {
+    waitDeposit: function(order) {
         mess('waitDeposit', 'order ' +
             order.exchangeTxId +
             ' : awaiting deposit starts');
         var myInterval;
-        var ttlTimeOut = setTimeout(function () {
+        var ttlTimeOut = setTimeout(function() {
             clearInterval(myInterval);
             exec.awaitDepositStop(order);
             myErrorHandler(
@@ -113,7 +113,7 @@ module.exports = {
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
         }, order.ttl * 60000);
-        myInterval = setInterval(function () {
+        myInterval = setInterval(function() {
             if (!order.waitDepositProvider == '')
                 exec.findTxFrom(order, myInterval, ttlTimeOut)
             else {
@@ -122,23 +122,22 @@ module.exports = {
         }, 20000);
     },
 
-    checkDepositStatus: async function (order) {
+    checkDepositStatus: async function(order) {
         if (coins[order.symbolFrom].canReceive) {
             res = await methods.runMethod('awaitDeposit', 'check', order)
             if (!res.error) return
                 //  need restart awaitDeposit
-                res = await methods.runMethod('awaitDeposit', 'start', order);
-                if (res.error) order.waitDepositProvider = ''
-                else order.waitDepositProvider = res.provider;
-        }
-        else order.waitDepositProvider = '';
+            res = await methods.runMethod('awaitDeposit', 'start', order);
+            if (res.error) order.waitDepositProvider = ''
+            else order.waitDepositProvider = res.provider;
+        } else order.waitDepositProvider = '';
         tools.saveOrder(order, 'checkDepositStatus');
     },
 
-    findTxFrom: async function (order, interval, timeout) {
+    findTxFrom: async function(order, interval, timeout) {
         var depositIsFind = false;
         incTx = await TX.findOne({ addrFrom: order.userAddrFrom }).exec()
-            .catch(err => {
+            .catch((err) => {
                 myErrorHandler('findTxFrom: exec order ' +
                     order.exchangeTxId +
                     ' Tx find, ' +
@@ -148,7 +147,9 @@ module.exports = {
         if (incTx = null) return;
         if (incTx.confirms == 0 && order.status.code < 3) {
             order.status = {
-                code: 2, human: twist.humans[2], data: {
+                code: 2,
+                human: twist.humans[2],
+                data: {
                     confirmations: incTx.confirms,
                     wait: coins[order.symbolFrom].confirmations
                 }
@@ -165,8 +166,11 @@ module.exports = {
             incTx.confirms >= coins[order.symbolFrom].confirmations
         ) {
             order.status = {
-                code: 3, human: twist.humans[3], data: {
-                    confirmations: incTx.confirms, time: timeNow()
+                code: 3,
+                human: twist.humans[3],
+                data: {
+                    confirmations: incTx.confirms,
+                    time: timeNow()
                 }
             };
             order.confirmTxFrom = true;
@@ -186,7 +190,7 @@ module.exports = {
         if (!depositIsFind) {
             depositIsFind = true;
             clearTimeout(timeout);
-            timeout = setTimeout(function () {
+            timeout = setTimeout(function() {
                 clearInterval(interval);
                 exec.awaitDepositStop(order);
                 myErrorHandler(
@@ -201,7 +205,7 @@ module.exports = {
         };
     },
 
-    awaitDepositStop: function (order) {
+    awaitDepositStop: function(order) {
         coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
         methods.runMethod('awaitDeposit', 'stop', order)
             .catch((err) => {
@@ -217,7 +221,7 @@ module.exports = {
     },
 
     /// TODO !!!
-    makeTxTo: function (order) {
+    makeTxTo: function(order) {
         var change,
             valueFact = valueToFix(order.received / order.exchangeRatio);
         change = valueToFix(
@@ -248,14 +252,14 @@ module.exports = {
         });
         axios
             .get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
-            .then(function (outTx) {
+            .then(function(outTx) {
                 order.status = {
                     code: 4,
                     human: twist.humans[4],
                     data: { hash: outTx.data.hash }
                 };
                 order.hashTxTo = outTx.data.hash;
-                order.save(function (err) {
+                order.save(function(err) {
                     if (err)
                         return myErrorHandler(
                             'makeTxTo: exec order ' +
@@ -273,7 +277,7 @@ module.exports = {
                 ); //  !!!TODO correct awat Tx to user
                 axios
                     .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
-                    .then(function (h) {
+                    .then(function(h) {
                         console.log(
                             timeNow() +
                             ' exec order ' +
@@ -295,7 +299,7 @@ module.exports = {
                             timeNow() + ' exec order ' + order.exchangeTxId + ' finished!'
                         );
                     })
-                    .catch(function (err) {
+                    .catch((err) => {
                         myErrorHandler(
                             'makeTxTo: exec order ' +
                             order.exchangeTxId +
@@ -306,7 +310,7 @@ module.exports = {
                         );
                     });
             })
-            .catch(function (err) {
+            .catch((err) => {
                 myErrorHandler(
                     'exec order ' +
                     order.exchangeTxId +
