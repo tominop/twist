@@ -15,9 +15,9 @@ module.exports = {
         if ((coins[coin])[coinStatus]) {
             mess('runMethod', 'run func ' + method + coin + ' ' + action);
             res = await this[method + coin](action, order) //  100ms, 20
-            if (!res.error) return { error: false, method: method + coin };
+            if (res && !res.error) return { error: false, method: method + coin };
             (coins[coin])[coinStatus] = false;
-            myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res.response);
+            myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res);
         };
         myErrorHandler('runMethod ' + method + coin + ' ' + action + ' not aviable');
         return { error: true, message: method + ' ' + action + ' not aviable' };

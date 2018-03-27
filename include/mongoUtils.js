@@ -117,6 +117,9 @@ module.exports = {
     setOrderStatus: function(order, code, data) {
         order.status = { code: code, human: twist.humans[code], data: data };
         tools.saveOrder(order, 'setOrderStatus');
+        var ind = utils.orderToInd(order.exchangeTxId);   //  find orderId in array of executed orders
+        if (!ind) ind = execOrders.length;
+        execOrders[ind] = { id: order.exchangeTxId, status: code, time: new Date() };
     },
 
     saveOrder: function(order, name) {
@@ -253,6 +256,15 @@ module.exports = {
                 });
             });
     },
+
+    findTxById: function(oid) {
+        Tx.findOne({ orderID: oid }).exec(function(err, tx) {
+            if (err) return false;
+            if (tx == null) return false;
+           return tx;
+        });
+    },
+
 
     getTxs: function(res) {
         Tx.find().exec(function(err, txs) {

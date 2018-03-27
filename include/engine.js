@@ -3,13 +3,14 @@
 Coin = require("./coinUtils");
 
 module.exports = {
-    start: function() {
+    start: function () {
         this.setCallPeriod(this.coinsCheck, twist.coinsCheckPeriod);
         this.setCallPeriod(this.helthCheck, twist.helthCheckPeriod);
-        this.setCallPeriod(this.orderCheck, twist.orderCheckPeriod);
+        //        this.setCallPeriod(this.orderCheck, twist.orderCheckPeriod);
+        this.orderCheck();
     },
 
-    setCallPeriod: function(func, timeout) {
+    setCallPeriod: function (func, timeout) {
         func();
         var timerCheck = setTimeout(function check() {
             func();
@@ -17,7 +18,7 @@ module.exports = {
         }, timeout * 60000); //  check period in min.
     },
 
-    coinsCheck: function() {
+    coinsCheck: function () {
         for (coin in coins) {
             if (coins[coin].active) {
                 coins[coin].updated = false;
@@ -33,22 +34,22 @@ module.exports = {
         }
     },
 
-    helthCheck: function() {},
+    helthCheck: function () { },
 
-    orderCheck: async function() {
+    orderCheck: async function () {
         var orders = await tools.getNewOrders();
         for (order in orders) {
             if (orders[order].status.code == 0) exec.takeOrder(orders[order]);
             else if (orders[order].status.code == 1)
-                exec.checkDepositStatus(orders[order]);
+                exec.checkDepositStatus1(orders[order]);
             else if (orders[order].status.code == 2)
-            //  => if
-                exec.checkDepositStatus(orders[order]);
+                //  => if
+                exec.checkDepositStatus2(orders[order]);
             else if (orders[order].status.code == 3) exec.makeRefund(orders[order]);
             else if (orders[order].status.code == 4)
-                exec.waitRefundConfirm(orders[order]);
+                exec.checkRefundStatus1(orders[order]);
             else if (orders[order].status.code == 5)
-                exec.checkRefundStatus(orders[order]);
+                exec.checkRefundStatus2(orders[order]);
             else if (orders[order].status.code > 5) tools.arhOrder(orders[order]);
         }
     }

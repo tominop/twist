@@ -4,11 +4,13 @@
 //  global variables
 Order = require("../models/orders");
 ArhOrder = require("../models/arhorders");
+execOrders = []; //  array of executed orders
 
 //  global functions
 methods = require("../include/orderApiUtils");
 tools = require("../include/mongoUtils");
 exec = require("../include/orderExec");
+utils = require("../include/orderUtils");
 
 //  main newOrder() route //  create new order and start exchange
 
