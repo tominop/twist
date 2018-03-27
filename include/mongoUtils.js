@@ -9,10 +9,25 @@ module.exports = {
             .catch((err) => { myErrorHandler("getNewOrders tools: " + err, res); })
     },
 
+    getAOrders: async function(res) {
+        return ArhOrder.find().exec()
+            .catch((err) => { myErrorHandler("getArhOrders tools: " + err, res); })
+    },
+
     getOrders: async function(res) {
         const orders = await this.getNewOrders(res);
         if (orders == null || orders[0] == null)
-            return myErrorHandler("getOrders tools: orders not foud", res);
+            return myErrorHandler("getOrders tools: orders not found", res);
+        res.json({
+            error: false,
+            orders: orders
+        });
+    },
+
+    getArhOrders: async function(res) {
+        const orders = await this.getAOrders(res);
+        if (orders == null || orders[0] == null)
+            return myErrorHandler("getArhOrders tools: orders not found", res);
         res.json({
             error: false,
             orders: orders
@@ -29,6 +44,32 @@ module.exports = {
                     if (order == null) return myErrorHandler("order not foud", res);
                     res.json({
                         error: false,
+                        order: null,
+                        arhorder: order
+                    });
+                });
+            } else {
+                res.json({
+                    error: false,
+                    order: order
+                });
+            }
+        });
+    },
+
+
+
+    findOrderByUserId: function(uid, res) {
+        Order.findOne({ userID: uid }).exec(function(err, order) {
+            if (err) return myErrorHandler("findOrderByUserId exec: " + err, res);
+            if (order == null) {
+                ArhOrder.findOne({ userID: uid }).exec(function(err, order) {
+                    if (err)
+                        return myErrorHandler("findOrderByUserId exec: " + err, res);
+                    if (order == null) return myErrorHandler("order not foud", res);
+                    res.json({
+                        error: false,
+                        order: null,
                         arhorder: order
                     });
                 });
@@ -61,15 +102,14 @@ module.exports = {
         });
     },
 
-    setOrderStatusID: function(orderID, status, res) {
+    setOrderStatusID: function(orderID, status, reason, res) {
         Order.findOne({ exchangeTxId: orderID }).exec(function(err, order) {
             if (err) return myErrorHandler(err, res);
             if (order == null) return myErrorHandler("order not foud", res);
             if (status != undefined) {
-                order.status = status;
-                tools.saveOrder(order, 'setOrderStatusID');
-                //  console.log('Order ' + orderID + '  %s', order.status.toString());
-                if (res) res.json({ error: false, status: order.status });
+                data = { reason: reason, time: timeNow() }
+                tools.setOrderStatus(order, status, data);
+                if (res) res.json({ error: false, order: order });
             }
         });
     },
@@ -128,9 +168,11 @@ module.exports = {
         });
         tools.saveOrder(arhorder, 'arhOrder')
         order.remove(function(err) {
-            if (err) {myErrorHandler(
-                "arhOrderByID: order " + arhorder.exchangeTxId + " remove, " + err, res);
-            res = undefined};
+            if (err) {
+                myErrorHandler(
+                    "arhOrderByID: order " + arhorder.exchangeTxId + " remove, " + err, res);
+                res = undefined
+            };
         });
         if (res)
             res.json({
@@ -139,32 +181,81 @@ module.exports = {
             });
     },
 
-    //  TX mongo utils
-
-    incomingTx: async function(data) { //  web hook handler
-        const tx = data.tx;
-        existTx = await Tx.findOne({ hashTx: tx.hash })
-        .exec(function(err) { if (err) return myErrorHandler("incoming Tx: " + err) });
-        if (existTx != null) existTx.confirms = tx.confirmations;
-        else {
-            existTx = new Tx({
-                hashTx: tx.hash,
-                orderID: "",
-                createDateUTC: tx.createDateUTC,
-                confirms: tx.confirms,
-                addrFrom: tx.addrFrom,
-                value: tx.value,
-                To: tx.To
-            });
-        }
-        existTx.save(function(err) {
-            if (err) myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err);
+    deArhOrderByID: function(oid, res) {
+        ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
+            if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
+            if (order == null) return myErrorHandler("order not foud", res);
+            tools.deArhOrder(order, res);
         });
+    },
 
+    deArhOrder: function(order, res) {
+        neworder = new Order({
+            exchangeTxId: order.exchangeTxId,
+            createDateUTC: order.createDateUTC,
+            ttl: order.ttl,
+            status: order.status,
+            exchangeRatio: order.exchangeRatio,
+            userID: order.userID,
+            userAddrFrom: order.userAddrFrom,
+            symbolFrom: order.symbolFrom,
+            valueFrom: order.valueFrom,
+            hashTxFrom: order.hashTxFrom,
+            confirmTxFrom: order.confirmTxFrom,
+            userAddrTo: order.userAddrTo,
+            symbolTo: order.symbolTo,
+            valueTo: order.valueTo,
+            hashTxTo: order.hashTxTo,
+            confirmTxTo: order.confirmTxTo,
+            exchangeAddrTo: order.exchangeAddrTo,
+            symbol: order.symbol,
+            amount: order.amount,
+            received: order.received,
+            sent: order.sent
+        });
+        neworder.status = { code: 0, human: twist.humans[0], data: { reason: 'manual resore from archive', time: timeNow() } };
+        tools.saveOrder(neworder, 'deArhOrder')
+        order.remove(function(err) {
+            if (err) {
+                myErrorHandler(
+                    "deArhOrderByID: order " + neworder.exchangeTxId + " remove, " + err, res);
+                res = undefined
+            };
+        });
+        if (res)
+            res.json({
+                error: false,
+                order: neworder
+            });
+    },
+
+    //  Tx mongo utils
+
+    incomingTx: async function(tx, res) { //  web hook handler
+        // const tx = data.tx;
+        Tx.findOne({ hashTx: tx.hash })
+            .exec(function(err, existTx) {
+                if (err) return myErrorHandler("incoming Tx: " + err, res)
+                if (existTx == null) {
+                    existTx = new Tx({
+                        hashTx: tx.hash,
+                        orderID: "",
+                        createDateUTC: tx.createDateUTC,
+                        confirms: tx.confirms,
+                        addrFrom: tx.addrFrom,
+                        value: tx.value,
+                        To: tx.To
+                    });
+                } else existTx.confirms = tx.confirms;
+                existTx.save(function(err) {
+                    if (err) return myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err);
+                    res.status(200).send('Ok');
+                });
+            });
     },
 
     getTxs: function(res) {
-        TX.find().exec(function(err, txs) {
+        Tx.find().exec(function(err, txs) {
             if (err) return myErrorHandler("getTx exec: " + err, res);
             if (txs == null) return myErrorHandler("transactions not foud", res);
             res.json({
@@ -175,7 +266,7 @@ module.exports = {
     },
 
     arhTxByID: function(oid, res) {
-        TX.findOne({ orderID: oid }).exec(function(err, tx) {
+        Tx.findOne({ orderID: oid }).exec(function(err, tx) {
             if (err) return myErrorHandler("arhTxByID exec: " + err, res);
             if (tx == null) return myErrorHandler("transaction not foud", res);
             tools.arhTx(tx, res);
@@ -183,7 +274,7 @@ module.exports = {
     },
 
     arhTxByAddr: function(addrs, res) {
-        TX.findOne({ addrFrom: addrs }).exec(function(err, tx) {
+        Tx.findOne({ addrFrom: addrs }).exec(function(err, tx) {
             if (err) return myErrorHandler("arhTxByAddr exec: " + err, res);
             if (tx == null) return myErrorHandler("transaction not foud", res);
             tools.arhTx(tx, res);
@@ -219,5 +310,22 @@ module.exports = {
                 error: false,
                 arhtx: arhtx
             });
+    },
+
+    removeTxByAddrFrom: function(addrs, res) {
+        Tx.findOneAndRemove({ addrFrom: addrs }).exec(function(err, tx) {
+            if (err) return myErrorHandler("removeTxByAddrFrom exec: " + err, res);
+            if (tx == null) return myErrorHandler("tx not foud", res);
+            res.json({ error: false, response: 'removed' });
+        });
+    },
+
+    removeTxByAddrTo: function(addrs, res) {
+        Tx.findOneAndRemove({ To: addrs }).exec(function(err, tx) {
+            if (err) return myErrorHandler("removeTxByAddrTo exec: " + err, res);
+            if (tx == null) return myErrorHandler("tx not foud", res);
+            res.json({ error: false, response: 'removed' });
+        });
     }
+
 }

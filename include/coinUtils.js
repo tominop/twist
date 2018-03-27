@@ -1,64 +1,98 @@
 //  file coinUtils.js
 
 module.exports = {
-
-    getBalance: function(coin, cb) {
-        axios.get(coins[coin].api + 'balanceTwist/' + coins[coin].walletFrom)
+    getBalance: function(coin) {
+        const cb = this.coinUpdated;
+        axios
+            .get(coins[coin].api + "balanceTwist/" + coins[coin].walletFrom)
             .then(function(response) {
                 if (response) {
                     if (response.status == 200) {
                         coins[coin].balance = response.data.balance;
                         coins[coin].minerFee = response.data.minerFee;
-                        this.cb(coin);
+                        cb(coin);
                         return;
-                    };
-                };
-                myErrorHandler('getBalance: invalid balance response from service ' + coins[coin].symbol + ' API');
+                    }
+                }
+                myErrorHandler(
+                    "getBalance: invalid balance response from service " +
+                    coins[coin].symbol +
+                    " API"
+                );
                 coins[coin].enabled = false;
-                this.cb(coin);
+                cb(coin);
             })
-            .catch((err) => {
-                myErrorHandler('getBalance: service ' + coins[coin].symbol + ' API ' + coins[coin].api + ' connection error' + err);
+            .catch(err => {
+                myErrorHandler(
+                    "getBalance: service " +
+                    coins[coin].symbol +
+                    " API " +
+                    coins[coin].api +
+                    " connection error" +
+                    err
+                );
                 coins[coin].enabled = false;
                 cb(coin);
             });
     },
 
-    getPrice: function(coin, base, cb) {
-        const isYODA = coins[coin].symbol === 'YODA';
-        if (isYODA) coin = 'ETH';
-        axios.get(twist.priceApiUrl + coins[coin].symbol + base)
+    getPrice: function(coin, base) {
+        const cb = this.coinUpdated;
+        const isYODA = coins[coin].symbol === "YODA";
+        const isETHR = coins[coin].symbol === "ETHR";
+        const isBTC3 = coins[coin].symbol === "BTC3";
+        if (isYODA) coin = "ETH"
+        else if (isETHR) coin = "ETH"
+        else if (isBTC3) coin = "BTC"
+        axios
+            .get(twist.priceApiUrl + coins[coin].symbol + base)
             .then(function(response) {
                 if (response) {
                     var k = 1;
                     if (response.status == 200) {
-                        if (new Date().getTime() - Date.parse(response.data.uptime) > twist.ttlPrice * 60000) k = 0;
+                        if (
+                            new Date().getTime() - Date.parse(response.data.uptime) >
+                            twist.ttlPrice * 60000
+                        )
+                            k = 0;
                         if (isYODA) {
-                            coin = 'YODA';
+                            coin = "YODA";
                             coins[coin].price = valueToFix(response.data.price / 1000 * k);
-                        } else coins[coin].price = valueToFix(response.data.price * k);
+                        } else {
+                            if (isETHR) coin = "ETHR"
+                            else if (isBTC3) coin = "BTC3";
+                            coins[coin].price = valueToFix(response.data.price * k);
+                        }
                         cb(coin);
-                        return
-                    };
-                };
-                myErrorHandler('getPrice: invalid response from price service for pair ' + coins[coin].symbol + base);
+                        return;
+                    }
+                }
+                myErrorHandler(
+                    "getPrice: invalid response from price service for pair " +
+                    coins[coin].symbol +
+                    base
+                );
                 coins[coin].price = 0;
                 cb(coin);
             })
-            .catch((err) => {
+            .catch(err => {
                 coins[coin].price = 0;
-                myErrorHandler('getPrice: price service API ' + twist.priceApiUrl + ' connection error ' + err);
+                myErrorHandler(
+                    "getPrice: price service API " +
+                    twist.priceApiUrl +
+                    " connection error " +
+                    err
+                );
                 cb(coin);
             });
     },
 
-    getReserv: function(coin, cb) {
+    getReserv: function(coin) {
+        this.coinUpdated(coin);
         //    coins[coin].reserv = 0;
-        cb(coin);
     },
 
     coinUpdated: function(coin) {
         if (++coins[coin].updated === 3) coins[coin].updated = true;
     }
-
-}
+};

@@ -89,7 +89,7 @@ module.exports = {
             //  Start awaiting deposit (incoming Tx hook service)
             res = await methods.runMethod('awaitDeposit', 'start', order);
             if (!res.error) {
-                order.waitDepositProvider = res.provider;
+                //                order.waitDepositProvider = res.provider;
                 tools.setOrderStatus(order, 1, { time: timeNow() });
                 exec.waitDeposit(order);
             };
@@ -114,7 +114,7 @@ module.exports = {
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
         }, order.ttl * 60000);
         myInterval = setInterval(function() {
-            if (!order.waitDepositProvider == '')
+            if (coins[order.symbolFrom].canReceive)
                 exec.findTxFrom(order, myInterval, ttlTimeOut)
             else {
                 tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
@@ -123,6 +123,7 @@ module.exports = {
     },
 
     checkDepositStatus: async function(order) {
+        return;
         if (coins[order.symbolFrom].canReceive) {
             res = await methods.runMethod('awaitDeposit', 'check', order)
             if (!res.error) return
@@ -136,7 +137,7 @@ module.exports = {
 
     findTxFrom: async function(order, interval, timeout) {
         var depositIsFind = false;
-        incTx = await TX.findOne({ addrFrom: order.userAddrFrom }).exec()
+        incTx = await Tx.findOne({ addrFrom: order.userAddrFrom }).exec()
             .catch((err) => {
                 myErrorHandler('findTxFrom: exec order ' +
                     order.exchangeTxId +
@@ -220,7 +221,7 @@ module.exports = {
             });
     },
 
-/// TODO !!!
+    /// TODO !!!
     makeRefund: function(order) {
         var change,
             valueFact = valueToFix(order.received / order.exchangeRatio);
@@ -322,11 +323,13 @@ module.exports = {
             });
     },
 
-//  TODO!!!!!
+    //  TODO!!!!!
     waitRefund: function(order) {
+
         mess('waitDeposit', 'order ' +
             order.exchangeTxId +
             ' : awaiting deposit starts');
+        return
         var myInterval;
         var ttlTimeOut = setTimeout(function() {
             clearInterval(myInterval);
@@ -349,8 +352,8 @@ module.exports = {
         }, 20000);
     },
 
-//  TODO!!!!!
-checkRefundStatus: async function(order) {
+    //  TODO!!!!!
+    checkRefundStatus: async function(order) {
         if (coins[order.symbolFrom].canReceive) {
             res = await methods.runMethod('awaitDeposit', 'check', order)
             if (!res.error) return
@@ -361,6 +364,6 @@ checkRefundStatus: async function(order) {
         } else order.waitDepositProvider = '';
         tools.saveOrder(order, 'checkRefundStatus');
     }
-    
+
 
 }

@@ -3,7 +3,7 @@
 module.exports = {
 
     runMethod: async function(method, action, order) {
-        var res;
+        var res, coinStatus, coin;
         mess('runMethod', order.exchangeTxId + ' ' + method + ' ' + action + ' now');
         if (method == 'awaitDeposit') {
             coinStatus = 'canReceive';
@@ -12,46 +12,27 @@ module.exports = {
             coinStatus = 'canSend'
             coin = order.symbolTo;
         };
-        if ([coins][coin][coinStatus]) {
+        if ((coins[coin])[coinStatus]) {
             mess('runMethod', 'run func ' + method + coin + ' ' + action);
-            res = await this.runM(this[method + coin], action, order, 100, 20); //  100ms, 20
-            if (!res.error) {
-                return { error: false, method: method + coin };
-            }
-            [coins][coin][coinStatus] = false;
-            myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res);
+            res = await this[method + coin](action, order) //  100ms, 20
+            if (!res.error) return { error: false, method: method + coin };
+            (coins[coin])[coinStatus] = false;
+            myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res.response);
         };
         myErrorHandler('runMethod ' + method + coin + ' ' + action + ' not aviable');
         return { error: true, message: method + ' ' + action + ' not aviable' };
     },
 
-    runM: async function(func, aciton, data, period, num) {
-        let response;
-        func(action, data, wait) //  async function call
-            .then((res) => { response = { error: res.error || true, response: res.response || 'unknown error' } })
-            .catch((err) => {
-                response = { error: true, message: err };
-            })
-        for (var i = 0; i < num; i++) { //  number of loops
-            if (response != undefined) return response
-            await wait(period) //  period in msec.
-        };
-        myErrorHandler('runM ' + method + ': not starts in period ' + (num * period / 1000).toString + 'sec.');
-        return { error: true, message: 'not starts in timeout' }
-    },
-
     awaitDepositBTC3: async function(action, order) {
-        return axios.get(
+        return axios.post(
             coins[order.symbolFrom].api + action +
-            "WaitTx/" +
-            JSON.stringify({
+            "WaitTx", {
                 addrs: order.exchangeAddrTo,
                 confirms: coins[order.symbolFrom].confirmations,
                 url: twist.url + '/twist/incomingtx'
-            })
-        ).catch((err) => {
+            }).catch((err) => {
             myErrorHandler(
-                "eXecute: exec order " +
+                "awaitDepositBTC3: exec order " +
                 order.exchangeTxId +
                 " service " +
                 order.symbolFrom +
@@ -101,6 +82,13 @@ module.exports = {
             return new Error('eroor in btc3');
         }, 1000)
     },
+
+    makeRefundETHR: async function(data) {
+        setTimeout(() => {
+            return new Error('eroor in btc3');
+        }, 1000)
+    },
+
 
     makeRefundBTC3: async function(data) {
         setTimeout(() => {

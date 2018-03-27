@@ -14,6 +14,8 @@ module.exports = {
         switch (symbol) {
             case "ETH":
                 return "ET";
+            case "ETHR":
+                return "ER";
             case "BTC":
                 return "BT";
             case "BTC3":

@@ -22,7 +22,7 @@ const dbConfig = require(configDbFile),
     mongoose = require('mongoose');
 
 mongoose.connection.on("open", function(ref) {
-    mess( 'twist', 'service connected to mongo server');
+    mess('twist', 'service connected to mongo server');
 });
 
 mongoose.connection.on("error", function(err) {
@@ -59,7 +59,9 @@ app.options("/*", function(req, res, next) {
 
 //  Configuring express to use body-parser as middle-ware
 app.use(bodyParser.json());
-
+app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
+    extended: true
+}));
 //  Load routes (shema without express.router)
 
 require('./routes/coin');

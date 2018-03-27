@@ -37,7 +37,7 @@ global.timeNow = function() {
 };
 
 
-global.wait = async function (timeout) {
+global.wait = async function(timeout) {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve()
@@ -66,7 +66,8 @@ global.invalidUserID = function(uid) {
 };
 
 global.invalidSymbolAddr = function(symbol) {
-    return (invalidData(symbol) || (symbol != 'ETH' && symbol != 'BTC'));
+    for (coin in coins) { if (coins[coin].symbol == symbol) return false }
+    return true;
 };
 
 global.invalidValue = function(symbol, value) {
@@ -77,9 +78,6 @@ global.invalidValue = function(symbol, value) {
 
 global.invalidAddr = function(symbol, addr) {
     if (invalidData(addr)) return true
-    else if (symbol == 'ETH') {
-        return false
-    } else if (symbol == 'BTC') {
-        return false
-    } else return true;
+    for (coin in coins) { if (coins[coin].symbol == symbol) return false };
+    return true;
 };

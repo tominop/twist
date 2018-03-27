@@ -31,6 +31,10 @@ app.get("/twist/orders", function(req, res) {
     tools.getOrders(res);
 });
 
+//  getArhOrders() route
+app.get("/twist/arhorders", function(req, res) {
+    tools.getArhOrders(res);
+});
 
 //  getOrderByID() route
 app.get("/twist/order/:orderID", function(req, res) {
@@ -39,21 +43,15 @@ app.get("/twist/order/:orderID", function(req, res) {
     tools.findOrderByID(req.params.orderID, res);
 });
 
-//  arhOrderByID() route
-app.get("/twist/arhorder/:orderID", function(req, res) {
-    if (invalidData(req.params.orderID))
-        return myErrorHandler("arhorder: invalid order ID", res);
-        tools.arhOrderByID(req.params.orderID, res);
-});
-
 //  setOrderStatus() route
 app.get("/twist/status", function(req, res) {
     const query = require("url").parse(req.url, true).query;
     const orderID = query.order,
-        status = parseInt(query.status);
-    if (invalidData(orderID) || invalidData(status))
+        status = parseInt(query.status),
+        reason = query.reason;
+    if (invalidData(orderID))
         return myErrorHandler("setOrderStatus: invalid parameters", res);
-        tools.setOrderStatusID(orderID, status, res);
+    tools.setOrderStatusID(orderID, status, reason, res);
 });
 
 //  getOrderByAddr() route
@@ -61,12 +59,34 @@ app.get("/twist/addr/:addr", function(req, res) {
     const addr = req.params.addr;
     if (addr == undefined || addr == "")
         return myErrorHandler("getOrderByAddr: invalid address", res);
-        tools.findOrderByAddr(addr, res);
+    tools.findOrderByAddr(addr, res);
+});
+
+//  getOrderByUserId() route
+app.get("/twist/addr/:uid", function(req, res) {
+    const uid = req.params.uid;
+    if (uid == undefined || uid == "")
+        return myErrorHandler("getOrderByUserId: invalid UserId", res);
+    tools.findOrderByUserId(uid, res);
 });
 
 //  deleteOrderByID() route
 app.get("/twist/deleteorder/:orderID", function(req, res) {
     if (invalidData(req.params.orderID))
         return myErrorHandler("deleterder: invalid order ID", res);
-        tools.deleteOrderByID(req.params.orderID, res);
+    tools.deleteOrderByID(req.params.orderID, res);
+});
+
+//  arhOrderByID() route
+app.get("/twist/arhorder/:orderID", function(req, res) {
+    if (invalidData(req.params.orderID))
+        return myErrorHandler("arhorder: invalid order ID", res);
+    tools.arhOrderByID(req.params.orderID, res);
+});
+
+//  deArhOrderByID() route
+app.get("/twist/dearhorder/:orderID", function(req, res) {
+    if (invalidData(req.params.orderID))
+        return myErrorHandler("arhorder: invalid order ID", res);
+    tools.deArhOrderByID(req.params.orderID, res);
 });
