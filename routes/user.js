@@ -46,7 +46,7 @@ app.post('/twist/iuban', function(req, res) {
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res);
     if (invalidSymbolAddr(symbolAddr)) return myErrorHandler('invalid symbol', res);
     if (invalidAddr(symbolAddr, userAddr)) return myErrorHandler('invalid address', res);
-    symbolAddr = symbolConvert(symbolAddr);
+    symbolAddr = user.symbolConvert(symbolAddr);
     axios.all([user.apiCall(coins['YODA'].api + 'uar/checkuser/' + userID), user.apiCall(coins['YODA'].api + 'uar/checkaddrs/' + symbolAddr + userAddr)])
         .then(axios.spread(function(uban, aban) { // Both requests are now complete
             if (uban && aban) {

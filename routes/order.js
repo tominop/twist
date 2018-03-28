@@ -75,7 +75,7 @@ app.get("/twist/addr/:addr", function(req, res) {
 });
 
 //  getOrderByUserId() route
-app.get("/twist/addr/:uid", function(req, res) {
+app.get("/twist/user/:uid", function(req, res) {
     const uid = req.params.uid;
     if (uid == undefined || uid == "")
         return myErrorHandler("getOrderByUserId: invalid UserId", res);
