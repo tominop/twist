@@ -29,6 +29,16 @@ app.post("/twist/neworder", function(req, res) {
 
 //  service routes
 
+//  start engine route
+app.get("/twist/startengine", function(req, res) {
+    service.start(res);
+});
+
+//  stop engine route
+app.get("/twist/stopengine/:clear", function(req, res) {
+    service.stop(req.params.clear, res);
+});
+
 //  getOrders() route
 app.get("/twist/orders", function(req, res) {
     tools.getOrders(res);
@@ -66,7 +76,7 @@ app.get("/twist/addr/:addr", function(req, res) {
 });
 
 //  getOrderByUserId() route
-app.get("/twist/addr/:uid", function(req, res) {
+app.get("/twist/user/:uid", function(req, res) {
     const uid = req.params.uid;
     if (uid == undefined || uid == "")
         return myErrorHandler("getOrderByUserId: invalid UserId", res);

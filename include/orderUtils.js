@@ -3,14 +3,14 @@
 module.exports = {
 
     //  find orderId in array of executed orders
-    orderToInd: function (oid) {
-        for (ind in execOrders) {
+    orderToInd: function(oid) {
+        for (ind = 0; ind < execOrders.length; ind++) {
             if (execOrders[ind].id == oid) return ind;
-            return false;
         };
+        return -1;
     },
 
-    newOrder: function (data, res) {
+    newOrder: function(data, res) {
         const userID = data.userID,
             userAddrFrom = data.userAddrFrom,
             symbolFrom = data.symbolFrom,
@@ -40,7 +40,7 @@ module.exports = {
             valueTo + coins[symbolTo].minerFee + coins[symbolTo].reserv
         )
             return myErrorHandler('newOrder: insufficient funds ' + symbolTo, res);
-        Order.findOne({ userID: userID }).exec(function (err, order) {
+        Order.findOne({ userID: userID }).exec(function(err, order) {
             if (err)
                 return myErrorHandler(
                     'newOrder: order.findOne promise1 ' + err,
@@ -77,14 +77,15 @@ module.exports = {
                 sent: 0.0
             });
             coins[symbolTo].reserv = coins[symbolTo].reserv + valueTo;
-            order.save(function (err) {
+            order.save(function(err) {
                 if (err)
                     return myErrorHandler(
                         'newOrder: order ID ' + order.exchangeTxId + ' save1 ' + err,
                         res
                     );
                 // Order is saved to DB and add to executed orders array
-                execOrders[execOrder.length] = { id: exchangeTxId, time: new Date(), status: 0 }
+                execOrders[execOrders.length] = { id: order.exchangeTxId, time: new Date(), status: 0 }
+                exec.takeOrder(order);
                 res.json({
                     error: false,
                     order: order
@@ -93,14 +94,14 @@ module.exports = {
         });
     },
 
-    waitDeposit: function (order) {
+    waitDeposit: function(order) {
         mess('waitDeposit', 'order ' +
             order.exchangeTxId +
             ' : awaiting deposit starts');
         var myInterval;
-        var ttlTimeOut = setTimeout(function () {
+        var ttlTimeOut = setTimeout(function() {
             clearInterval(myInterval);
-            exec.awaitDepositStop(order);
+            utils.awaitDepositStop(order);
             myErrorHandler(
                 'waitDeposit: order ' +
                 order.exchangeTxId +
@@ -110,7 +111,7 @@ module.exports = {
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
         }, order.ttl * 60000);
-        myInterval = setInterval(function () {
+        myInterval = setInterval(function() {
             if (coins[order.symbolFrom].canReceive)
                 exec.findTxTo(order, myInterval, ttlTimeOut)
             else {
@@ -119,7 +120,7 @@ module.exports = {
         }, 20000);
     },
 
-    findTxFrom: async function (order, interval, timeout) {
+    findTxFrom: async function(order, interval, timeout) {
         var depositIsFind = false;
         incTx = await Tx.findOne({ addrFrom: order.exchangeAddrTo }).exec()
             .catch((err) => {
@@ -165,19 +166,20 @@ module.exports = {
         if (order.status.code == 3) {
             clearTimeout(timeout);
             clearInterval(interval);
-            exec.awaitDepositStop(order);
+            utils.awaitDepositStop(order);
             mess('findTxFrom', 'exec order ' +
                 order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirmed '
             );
+            exec.makeRefund(order);
             return;
         };
         if (!depositIsFind) {
             depositIsFind = true;
             clearTimeout(timeout);
-            timeout = setTimeout(function () {
+            timeout = setTimeout(function() {
                 clearInterval(interval);
-                exec.awaitDepositStop(order);
+                utils.awaitDepositStop(order);
                 myErrorHandler(
                     'waitDeposit: order ' +
                     order.exchangeTxId +
@@ -261,7 +263,7 @@ module.exports = {
         };
     },
 
-    awaitDepositStop: function (order) {
+    awaitDepositStop: function(order) {
         coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
         methods.runMethod('awaitDeposit', 'stop', order)
             .catch((err) => {
@@ -277,7 +279,7 @@ module.exports = {
     },
 
     /// TODO !!!
-    makeRefund: function (order) {
+    makeRefund: function(order) {
         var change,
             valueFact = valueToFix(order.received / order.exchangeRatio);
         change = valueToFix(
@@ -308,14 +310,14 @@ module.exports = {
         });
         axios
             .get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
-            .then(function (outTx) {
+            .then(function(outTx) {
                 order.status = {
                     code: 4,
                     human: twist.humans[4],
                     data: { hash: outTx.data.hash }
                 };
                 order.hashTxTo = outTx.data.hash;
-                order.save(function (err) {
+                order.save(function(err) {
                     if (err)
                         return myErrorHandler(
                             'makeTxTo: exec order ' +
@@ -333,7 +335,7 @@ module.exports = {
                 ); //  !!!TODO correct awat Tx to user
                 axios
                     .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
-                    .then(function (h) {
+                    .then(function(h) {
                         console.log(
                             timeNow() +
                             ' exec order ' +
@@ -379,14 +381,14 @@ module.exports = {
     },
 
     //  TODO!!!!!
-    waitRefund: function (order) {
+    waitRefund: function(order) {
 
         mess('waitDeposit', 'order ' +
             order.exchangeTxId +
             ' : awaiting deposit starts');
         return
         var myInterval;
-        var ttlTimeOut = setTimeout(function () {
+        var ttlTimeOut = setTimeout(function() {
             clearInterval(myInterval);
             exec.awaitDepositStop(order);
             myErrorHandler(
@@ -398,7 +400,7 @@ module.exports = {
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
         }, order.ttl * 60000);
-        myInterval = setInterval(function () {
+        myInterval = setInterval(function() {
             if (!order.waitDepositProvider == '')
                 exec.findTxFrom(order, myInterval, ttlTimeOut)
             else {
@@ -408,11 +410,11 @@ module.exports = {
     },
 
     //  TODO!!!!!
-    checkRefundStatus: async function (order) {
+    checkRefundStatus: async function(order) {
         if (coins[order.symbolFrom].canReceive) {
             res = await methods.runMethod('awaitDeposit', 'check', order)
             if (!res.error) return
-            //  need restart awaitDeposit
+                //  need restart awaitDeposit
             res = await methods.runMethod('awaitDeposit', 'start', order);
             if (res.error) order.waitDepositProvider = ''
             else order.waitDepositProvider = res.provider;

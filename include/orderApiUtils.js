@@ -14,7 +14,7 @@ module.exports = {
         };
         if ((coins[coin])[coinStatus]) {
             mess('runMethod', 'run func ' + method + coin + ' ' + action);
-            res = await this[method + coin](action, order) //  100ms, 20
+            res = await this[method](action, order) //  100ms, 20
             if (res && !res.error) return { error: false, method: method + coin };
             (coins[coin])[coinStatus] = false;
             myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + res);
@@ -23,7 +23,7 @@ module.exports = {
         return { error: true, message: method + ' ' + action + ' not aviable' };
     },
 
-    awaitDepositBTC3: async function(action, order) {
+    awaitDeposit: async function(action, order) {
         return axios.post(
             coins[order.symbolFrom].api + action +
             "WaitTx", {
@@ -41,7 +41,7 @@ module.exports = {
         });
     },
 
-    awaitDepositBTC: async function(data) {
+    awaitDeposit: async function(data) {
         let res
         setTimeout(() => {
             res = new Error('await2 error1')
@@ -56,59 +56,13 @@ module.exports = {
         return new Error('awat2 error2')
     },
 
-    awaitDepositETH: async function(data) {
-        let res
-        setTimeout(() => {
-            res = new Error('await3 error1')
-        }, 7000)
-        setTimeout((data) => {
-            res = true
-        }, data * 3)
-        for (var i = 0; i < 1000; i++) {
-            if (res != undefined) return res
-            await wait(100);
-        }
-        return new Error('awat3 error2')
-    },
-
-    makeRefundBTC: async function(data) {
+    makeRefund: async function(data) {
         setTimeout(() => {
             return new Error('eroor in btc3');
         }, 1000)
     },
 
-    makeRefundETH: async function(data) {
-        setTimeout(() => {
-            return new Error('eroor in btc3');
-        }, 1000)
-    },
-
-    makeRefundETHR: async function(data) {
-        setTimeout(() => {
-            return new Error('eroor in btc3');
-        }, 1000)
-    },
-
-
-    makeRefundBTC3: async function(data) {
-        setTimeout(() => {
-            return new Error('eroor in btc3');
-        }, 1000)
-    },
-
-    awaitRefundBTC: async function(data) {
-        setTimeout(() => {
-            return new Error('eroor in btc3');
-        }, 1000)
-    },
-
-    awaitRefundETH: async function(data) {
-        setTimeout(() => {
-            return new Error('eroor in btc3');
-        }, 1000)
-    },
-
-    awaitRefundBTC3: async function(data) {
+    awaitRefund: async function(data) {
         setTimeout(() => {
             return new Error('eroor in btc3');
         }, 1000)

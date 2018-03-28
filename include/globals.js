@@ -14,7 +14,8 @@ global.coins = require(twist.mode == 'development' ? '../private/coins' : './coi
 
 //  global functions
 
-global.mess = function(name, message) {
+global.mess = function(name, message, res) {
+    if (res) res.json({ error: false, response: message });
     console.log(timeNow() + name + ': ' + message);
 };
 
