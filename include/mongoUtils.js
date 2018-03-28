@@ -336,8 +336,23 @@ module.exports = {
         Tx.findOneAndRemove({ To: addrs }).exec(function(err, tx) {
             if (err) return myErrorHandler("removeTxByAddrTo exec: " + err, res);
             if (tx == null) return myErrorHandler("tx not foud", res);
-            res.json({ error: false, response: 'removed' });
+            if (res) res.json({ error: false, response: 'removed' });
         });
-    }
+    },
 
+    getAddressTo: async function(coin, uid, res) {
+        if (coin = 'BTC') coin = 'BTC3'
+        var adr = await Addrs.findOne({coin: coin, userId: uid, active: true}).exec().catch((err) => {
+            return myErrorHandler("getAddrTo: " + err, res)});
+            if (adr == null) {
+                adr = await Addrs.findOne({coin: coin, userId: '', active: true}).exec().catch((err) => {
+                    if (adr == null) return myErrorHandler("getAddrTo: " + err, res)});
+            }
+            adr.userId = uid;
+            if (++adr.counter > 3) adr.active = false;
+            adr.save().catch((err) => {myErrorHandler('getAddrTo address save ' + err)
+            });
+            if (res) res.json({ error: false, coin: coin, address: addr, counter: adr.counter });
+            return tx;
+    }
 }

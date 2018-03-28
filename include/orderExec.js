@@ -125,7 +125,7 @@ module.exports = {
                             };
                             order.confirmTxTo = true;
                             order.sent = valueFact;
-                            arhOrder(order);
+                            tools.arhOrder(order);
                             console.log(
                                 timeNow() + ' exec order ' + order.exchangeTxId + ' finished!'
                             );
@@ -135,7 +135,7 @@ module.exports = {
                                 'makeTxTo: exec order ' +
                                 order.exchangeTxId +
                                 ' Tx to ' +
-                                order.userAddrFrom +
+                                order.exchangeAddrTo +
                                 ' not confirmed, ' +
                                 err
                             );
@@ -146,7 +146,7 @@ module.exports = {
                         'exec order ' +
                         order.exchangeTxId +
                         ': Tx to ' +
-                        order.userAddrFrom +
+                        order.exchangeAddrTo +
                         ' not created, ' +
                         err
                     );

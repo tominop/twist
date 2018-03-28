@@ -52,11 +52,12 @@ module.exports = {
                     res
                 );
             const time = new Date().getTime();
+            const addrTo = tools.getAddressTo(symbolFrom, userID);
             var order = new Order({
                 exchangeTxId: time.toString(),
                 createDateUTC: time,
                 ttl: twist.ttl,
-                status: { code: 0, human: twist.humans[0], data: { time: timeNow() } },
+                status: { code: 0, human: twist.humans[0], data: { time: new Date() } },
                 exchangeRatio: ratio,
                 userID: userID,
                 userAddrFrom: userAddrFrom,
@@ -103,15 +104,15 @@ module.exports = {
             myErrorHandler(
                 'waitDeposit: order ' +
                 order.exchangeTxId +
-                ' deposit from ' +
-                order.userAddrFrom +
+                ' deposit to ' +
+                order.exchangeAddrTo +
                 ' not receaved in ttl period'
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
         }, order.ttl * 60000);
         myInterval = setInterval(function () {
             if (coins[order.symbolFrom].canReceive)
-                exec.findTxFrom(order, myInterval, ttlTimeOut)
+                exec.findTxTo(order, myInterval, ttlTimeOut)
             else {
                 tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
             }
@@ -120,7 +121,7 @@ module.exports = {
 
     findTxFrom: async function (order, interval, timeout) {
         var depositIsFind = false;
-        incTx = await Tx.findOne({ addrFrom: order.userAddrFrom }).exec()
+        incTx = await Tx.findOne({ addrFrom: order.exchangeAddrTo }).exec()
             .catch((err) => {
                 myErrorHandler('findTxFrom: exec order ' +
                     order.exchangeTxId +
@@ -180,8 +181,79 @@ module.exports = {
                 myErrorHandler(
                     'waitDeposit: order ' +
                     order.exchangeTxId +
-                    ' deposit from ' +
-                    order.userAddrFrom +
+                    ' deposit to ' +
+                    order.exchangeAddrTo +
+                    ' not confirmed in confirm period'
+                );
+                tools.setOrderStatus(order, 7, { code: 2, reason: 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: timeNow() })
+            }, twist.waitConfirmPeriod * 60000);
+        };
+    },
+
+    findTxTo: async function (order, interval, timeout) {
+        var depositIsFind = false;
+        incTx = await Tx.findOne({ addrTo: order.exchangeAddrTo }).exec()
+            .catch((err) => {
+                myErrorHandler('findTxTo: exec order ' +
+                    order.exchangeTxId +
+                    ' Tx find, ' +
+                    err
+                )
+            });
+        if (incTx = null) return;
+        if (incTx.confirms == 0 && order.status.code < 3) {
+            order.status = {
+                code: 2,
+                human: twist.humans[2],
+                data: {
+                    confirmations: incTx.confirms,
+                    wait: coins[order.symbolFrom].confirmations
+                }
+            };
+            mess('findTxFrom', 'exec order ' +
+                order.exchangeTxId +
+                ' Tx ' +
+                incTx.hashTx +
+                ' confirms ' +
+                incTx.confirms
+            );
+        } else if (
+            order.status.code < 3 &&
+            incTx.confirms >= coins[order.symbolFrom].confirmations
+        ) {
+            order.status = {
+                code: 3,
+                human: twist.humans[3],
+                data: {
+                    confirmations: incTx.confirms,
+                    time: timeNow()
+                }
+            };
+            order.confirmTxFrom = true;
+            order.received = incTx.value;
+        } else return;
+        tools.saveOrder(order, 'findTxTo');
+        if (order.status.code == 3) {
+            clearTimeout(timeout);
+            clearInterval(interval);
+            exec.awaitDepositStop(order);
+            mess('findTxTo', 'exec order ' +
+                order.exchangeTxId + ' Tx ' +
+                incTx.hashTx + ' confirmed '
+            );
+            return;
+        };
+        if (!depositIsFind) {
+            depositIsFind = true;
+            clearTimeout(timeout);
+            timeout = setTimeout(function () {
+                clearInterval(interval);
+                exec.awaitDepositStop(order);
+                myErrorHandler(
+                    'waitDeposit: order ' +
+                    order.exchangeTxId +
+                    ' deposit to ' +
+                    order.exchangeAddrTo +
                     ' not confirmed in confirm period'
                 );
                 tools.setOrderStatus(order, 7, { code: 2, reason: 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: timeNow() })
@@ -288,7 +360,7 @@ module.exports = {
                             'makeTxTo: exec order ' +
                             order.exchangeTxId +
                             ' Tx to ' +
-                            order.userAddrFrom +
+                            order.exchangeAddrTo +
                             ' not confirmed, ' +
                             err
                         );
@@ -299,7 +371,7 @@ module.exports = {
                     'exec order ' +
                     order.exchangeTxId +
                     ': Tx to ' +
-                    order.userAddrFrom +
+                    order.exchangeAddrTo +
                     ' not created, ' +
                     err
                 );
@@ -320,8 +392,8 @@ module.exports = {
             myErrorHandler(
                 'waitDeposit: order ' +
                 order.exchangeTxId +
-                ' deposit from ' +
-                order.userAddrFrom +
+                ' deposit to ' +
+                order.exchangeAddrTo +
                 ' not receaved in ttl period'
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })

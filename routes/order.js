@@ -4,6 +4,7 @@
 //  global variables
 Order = require("../models/orders");
 ArhOrder = require("../models/arhorders");
+Addrs = require("../models/addresses");
 execOrders = []; //  array of executed orders
 
 //  global functions
@@ -23,7 +24,7 @@ app.post("/twist/neworder", function(req, res) {
         return myErrorHandler("neworder: invalid user Address To", res);
     if (invalidValue(req.body.symbolFrom, req.body.valueFrom))
         return myErrorHandler("neworder: invalid user valueFrom ", res);
-    exec.newOrder(req.body, res);
+    utils.newOrder(req.body, res);
 });
 
 //  service routes
