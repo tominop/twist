@@ -53,7 +53,7 @@ module.exports = {
     },
 
     /// TODO !!!
-    makeRefund1: function(order) {
+    makeRefund1: async function(order) {
         if ((order.status).code != 3) tools.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
         if (coins[order.symbolFrom].canSend) {
             mess('makeRefund', 'order ' + order.exchangeTxId + ' refund starts');
