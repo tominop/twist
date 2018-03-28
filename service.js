@@ -74,8 +74,9 @@ require('./routes/errorHandler');
 //  Load main functions and start service
 service = require('./include/engine');
 
-service.start();
+//  if (twist.mode != 'development') service.start(); //..manual start engine in development mode
 
+service.start();
 
 const port = process.env.PORT_TWIST || 8900;
 twist.url = twist.url + ':' + port.toString();

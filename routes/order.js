@@ -23,10 +23,20 @@ app.post("/twist/neworder", function(req, res) {
         return myErrorHandler("neworder: invalid user Address To", res);
     if (invalidValue(req.body.symbolFrom, req.body.valueFrom))
         return myErrorHandler("neworder: invalid user valueFrom ", res);
-    exec.newOrder(req.body, res);
+    utils.newOrder(req.body, res);
 });
 
 //  service routes
+
+//  start engine route
+app.get("/twist/startengine", function(req, res) {
+    service.start(res);
+});
+
+//  stop engine route
+app.get("/twist/stopengine/:clear", function(req, res) {
+    service.stop(req.params.clear, res);
+});
 
 //  getOrders() route
 app.get("/twist/orders", function(req, res) {

@@ -9,6 +9,13 @@ module.exports = {
             .catch((err) => { myErrorHandler("getNewOrders tools: " + err, res); })
     },
 
+    findOrderID: async function(addr) {
+        order = await Order.findOne({ userAddrFrom: addr }).exec()
+            .catch((err) => { return myErrorHandler("getNewOrders tools: " + err, res); })
+        if (order == null) return
+        return order.exchangeTxId;
+    },
+
     getAOrders: async function(res) {
         return ArhOrder.find().exec()
             .catch((err) => { myErrorHandler("getArhOrders tools: " + err, res); })
@@ -22,6 +29,17 @@ module.exports = {
             error: false,
             orders: orders
         });
+    },
+
+    removeOrders: async function(res) {
+        const orders = await this.getNewOrders(res);
+        if (orders == null || orders[0] == null) return myErrorHandler("getOrders tools: orders not found", res);
+        for (order in orders) {
+            await orders[order].remove(function(err) {
+                if (err) return myErrorHandler("removeOrders stop save hook " + err);
+            });
+        }
+        mess('removeOrders', 'all orders removed', res)
     },
 
     getArhOrders: async function(res) {
@@ -117,7 +135,7 @@ module.exports = {
     setOrderStatus: function(order, code, data) {
         order.status = { code: code, human: twist.humans[code], data: data };
         tools.saveOrder(order, 'setOrderStatus');
-        var ind = utils.orderToInd(order.exchangeTxId);   //  find orderId in array of executed orders
+        var ind = utils.orderToInd(order.exchangeTxId); //  find orderId in array of executed orders
         if (!ind) ind = execOrders.length;
         execOrders[ind] = { id: order.exchangeTxId, status: code, time: new Date() };
     },
@@ -237,18 +255,20 @@ module.exports = {
     incomingTx: async function(tx, res) { //  web hook handler
         // const tx = data.tx;
         Tx.findOne({ hashTx: tx.hash })
-            .exec(function(err, existTx) {
+            .exec(async function(err, existTx) {
                 if (err) return myErrorHandler("incoming Tx: " + err, res)
                 if (existTx == null) {
+                    var oid = await tools.findOrderID(tx.addrFrom);
                     existTx = new Tx({
                         hashTx: tx.hash,
-                        orderID: "",
+                        orderID: oid,
                         createDateUTC: tx.createDateUTC,
                         confirms: tx.confirms,
                         addrFrom: tx.addrFrom,
                         value: tx.value,
                         To: tx.To
                     });
+
                 } else existTx.confirms = tx.confirms;
                 existTx.save(function(err) {
                     if (err) return myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err);
@@ -259,10 +279,17 @@ module.exports = {
 
     findTxById: function(oid) {
         Tx.findOne({ orderID: oid }).exec(function(err, tx) {
-            if (err) return false;
-            if (tx == null) return false;
-           return tx;
+            if (err) return;
+            if (tx == null) return;
+            return tx;
         });
+    },
+
+
+    findTxByAddr: async function(addr) {
+        tx = await Tx.findOne({ addrFrom: addr }).exec()
+            .catch((err) => { return myErrorHandler("findTxByAddr : " + err) })
+        return tx;
     },
 
 
@@ -276,6 +303,21 @@ module.exports = {
             });
         });
     },
+
+    removeTxs: async function(res) {
+        Tx.find().exec(async function(err, txs) {
+            if (err) return myErrorHandler("getTx exec: " + err, res);
+            if (txs == null || txs[0] == null) return myErrorHandler("transactions not foud", res);
+            for (tx in txs) {
+                await txs[tx].remove(function(err) {
+                    if (err) return myErrorHandler("removeTxs " + err);
+                });
+            };
+            mess('removeTxs', 'all txs removed', res)
+        });
+    },
+
+
 
     arhTxByID: function(oid, res) {
         Tx.findOne({ orderID: oid }).exec(function(err, tx) {
