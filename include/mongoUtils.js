@@ -395,6 +395,6 @@ module.exports = {
             adr.save().catch((err) => {myErrorHandler('getAddrTo address save ' + err)
             });
             if (res) res.json({ error: false, coin: coin, address: addr, counter: adr.counter });
-            return tx;
+            return adr.address;
     }
 }

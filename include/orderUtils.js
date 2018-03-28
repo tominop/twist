@@ -10,7 +10,7 @@ module.exports = {
         return -1;
     },
 
-    newOrder: function(data, res) {
+    newOrder: async function(data, res) {
         const userID = data.userID,
             userAddrFrom = data.userAddrFrom,
             symbolFrom = data.symbolFrom,
@@ -40,7 +40,7 @@ module.exports = {
             valueTo + coins[symbolTo].minerFee + coins[symbolTo].reserv
         )
             return myErrorHandler('newOrder: insufficient funds ' + symbolTo, res);
-        Order.findOne({ userID: userID }).exec(function(err, order) {
+        Order.findOne({ userID: userID }).exec(async function(err, order) {
             if (err)
                 return myErrorHandler(
                     'newOrder: order.findOne promise1 ' + err,
@@ -52,7 +52,7 @@ module.exports = {
                     res
                 );
             const time = new Date().getTime();
-            const addrTo = tools.getAddressTo(symbolFrom, userID);
+            const addrTo = await tools.getAddressTo(symbolFrom, userID);
             var order = new Order({
                 exchangeTxId: time.toString(),
                 createDateUTC: time,
@@ -70,7 +70,7 @@ module.exports = {
                 valueTo: valueTo,
                 hashTxTo: '',
                 confirmTxTo: false,
-                exchangeAddrTo: coins[symbolFrom].addressTo,
+                exchangeAddrTo: addrTo,
                 symbol: symbolFrom,
                 amount: valueFrom,
                 received: 0.0,
@@ -113,7 +113,7 @@ module.exports = {
         }, order.ttl * 60000);
         myInterval = setInterval(function() {
             if (coins[order.symbolFrom].canReceive)
-                exec.findTxTo(order, myInterval, ttlTimeOut)
+                utils.findTxTo(order, myInterval, ttlTimeOut)
             else {
                 tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
             }
@@ -171,7 +171,7 @@ module.exports = {
                 order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirmed '
             );
-            exec.makeRefund(order);
+            utils.makeRefund(order);
             return;
         };
         if (!depositIsFind) {
@@ -352,7 +352,7 @@ module.exports = {
                         };
                         order.confirmTxTo = true;
                         order.sent = valueFact;
-                        arhOrder(order);
+                        tools.arhOrder(order);
                         console.log(
                             timeNow() + ' exec order ' + order.exchangeTxId + ' finished!'
                         );
