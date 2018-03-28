@@ -202,7 +202,7 @@ module.exports = {
                     err
                 )
             });
-        if (incTx = null) return;
+        if (incTx == null) return;
         if (incTx.confirms == 0 && order.status.code < 3) {
             order.status = {
                 code: 2,
