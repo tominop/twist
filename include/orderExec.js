@@ -53,6 +53,20 @@ module.exports = {
     },
 
     /// TODO !!!
+    makeRefund1: function(order) {
+        if ((order.status).code != 3) tools.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
+        if (coins[order.symbolFrom].canSend) {
+            mess('makeRefund', 'order ' + order.exchangeTxId + ' refund starts');
+            //  Start awaiting deposit (incoming Tx hook service)
+            res = await methods.runMethod('makeRefund', 'start', order);
+            if (!res.error) {
+                tools.setOrderStatus(order, 4, { hash: res.hash, time: new Date() });
+                utils.waitRefund(order);
+                //                exec.waitDeposit(order);    //  immediate await incoming Tx
+            };
+        };
+    },
+
     makeRefund: function(order) {
         var change,
             valueFact = valueToFix(order.received / order.exchangeRatio);
