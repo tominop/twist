@@ -204,7 +204,7 @@ module.exports = {
             });
         if (incTx == null) return;
         if (incTx.confirms == 0 && order.status.code < 3) {
-            if (order.status.code == 1 || inc.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' + order.exchangeTxId + ' Tx ' +
+            if (order.status.code == 1 || incTx.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' + order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirms ' + incTx.confirms);
             order.status = {
                 code: 2,
@@ -234,6 +234,7 @@ module.exports = {
             clearTimeout(timeout);
             clearInterval(interval);
             utils.awaitDepositStop(order);
+            tools.arhTx(incTx);
             mess('findTxTo', 'exec order ' +
                 order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirmed '
@@ -260,6 +261,7 @@ module.exports = {
 
     awaitDepositStop: function(order) {
         coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
+
         methods.runMethod('awaitDeposit', 'stop', order)
             .catch((err) => {
                 myErrorHandler(

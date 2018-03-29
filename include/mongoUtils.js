@@ -384,17 +384,20 @@ module.exports = {
 
     getAddressTo: async function(coin, uid, res) {
         if (coin = 'BTC') coin = 'BTC3'
-        var adr = await Addrs.findOne({coin: coin, userId: uid, active: true}).exec().catch((err) => {
-            return myErrorHandler("getAddrTo: " + err, res)});
-            if (adr == null) {
-                adr = await Addrs.findOne({coin: coin, userId: '', active: true}).exec().catch((err) => {
-                    if (adr == null) return myErrorHandler("getAddrTo: " + err, res)});
-            }
-            adr.userId = uid;
-            if (++adr.counter > 3) adr.active = false;
-            adr.save().catch((err) => {myErrorHandler('getAddrTo address save ' + err)
+        var adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
+            return myErrorHandler("getAddrTo: " + err, res)
+        });
+        if (adr == null) {
+            adr = await Addrs.findOne({ coin: coin, userId: '', active: true }).exec().catch((err) => {
+                if (adr == null) return myErrorHandler("getAddrTo: " + err, res)
             });
-            if (res) res.json({ error: false, coin: coin, address: addr, counter: adr.counter });
-            return adr.address;
+        }
+        adr.userId = uid;
+        if (++adr.counter > 3) adr.active = false;
+        adr.save().catch((err) => {
+            myErrorHandler('getAddrTo address save ' + err)
+        });
+        if (res) res.json({ error: false, coin: coin, address: addr, counter: adr.counter });
+        return adr.address;
     }
 }
