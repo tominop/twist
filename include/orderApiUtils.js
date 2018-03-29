@@ -14,7 +14,6 @@ module.exports = {
         };
         if ((coins[coin])[coinStatus]) {
             resp = await methods[method](action, order) //  100ms, 20
-            mess('runMetod', 'starts??? response: ' + resp);
             if (resp && !resp.error) return { error: false, method: method + coin };
             (coins[coin])[coinStatus] = false;
             myErrorHandler('runMethod ' + method + coin + ' ' + action + ': ' + resp);

@@ -57,16 +57,11 @@ module.exports = {
             if (err) return myErrorHandler("getOrderByID exec: " + err, res);
             if (order == null) {
                 ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-                    if (err)
-                        return myErrorHandler("getOrderByID exec: " + err, res);
+                    if (err) return myErrorHandler("getOrderByID exec: " + err, res);
                     if (order == null) return myErrorHandler("order not foud", res);
-
+                    return res.json({ error: false, order: order });
                 });
-            }
-            res.json({
-                error: false,
-                order: order
-            });
+            } else res.json({ error: false, order: order });
         });
     },
 

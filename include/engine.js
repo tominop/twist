@@ -11,7 +11,7 @@ module.exports = {
         this.setCallPeriod(this.helthCheck, twist.helthCheckPeriod, 1);
         //        this.setCallPeriod(this.orderCheck, twist.orderCheckPeriod);
         this.orderCheck();
-        mess('twist onload', 'orderds engine starts', res)
+        mess('twist onload', 'orders engine starts', res)
     },
 
     stop: function(clear, res) {
