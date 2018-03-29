@@ -55,19 +55,20 @@ module.exports = {
         if ((order.status).code != 3) tools.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
         if (coins[order.symbolFrom].canSend) {
             mess('makeRefund', 'order ' + order.exchangeTxId + ' refund starts');
-            //  Start awaiting deposit (outgoing Tx hook service)
+            //  Start awaiting refund (outgoing Tx hook service)
             resp = await methods.refund('start', order);
-            if (resp && !resp.error) {
-                resp = await methods.refund('send', order);
-                if (resp && !resp.error) {
+            if (!resp || resp.error) return coins[order.symbolTo].canSend = false; //   outgoing tx awating service not wotks, do not refund!!!
+            //  Load outgoing tx (outgoing Tx hook service)
+            resp = await methods.refund('send', order);
+            if (!resp || resp.error) methods.refund('stop', order);
                     tools.setOrderStatus(order, 4, { hash: resp.hash, time: new Date() });
                     coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
                     utils.waitRefund(order);
                 } else {
-                    resp = await methods.refund('stop', order);
+                    resp = await bc();
                 };
-            } else coins[order.symbolTo].canSend = false; //   outgoing tx awating service not wotks, do not refund!!!
-        };
+          //   !!!!! TODO
+        
     },
     //  TODO!!!!!
     checkRefundStatus1: async function(order) {
@@ -120,7 +121,7 @@ module.exports = {
                 tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
             }
         }, 20000);
-    },
+    }
 
 
 }
