@@ -99,6 +99,7 @@ module.exports = {
             order.exchangeTxId +
             ' : awaiting deposit starts');
         var myInterval;
+        //  awaiting deposit timer
         var ttlTimeOut = setTimeout(function() {
             clearInterval(myInterval);
             utils.awaitDepositStop(order);
@@ -109,87 +110,16 @@ module.exports = {
                 order.exchangeAddrTo +
                 ' not receaved in ttl period'
             );
-            tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
+            tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: new Date() })
         }, order.ttl * 60000);
+        //  checking incoming tx timer
         myInterval = setInterval(function() {
             if (coins[order.symbolFrom].canReceive)
                 utils.findTxTo(order, myInterval, ttlTimeOut)
             else {
-                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
+                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: new Date() })
             }
         }, 20000);
-    },
-
-    findTxFrom: async function(order, interval, timeout) {
-        var depositIsFind = false;
-        incTx = await Tx.findOne({ addrFrom: order.exchangeAddrTo }).exec()
-            .catch((err) => {
-                myErrorHandler('findTxFrom: exec order ' +
-                    order.exchangeTxId +
-                    ' Tx find, ' +
-                    err
-                )
-            });
-        if (incTx = null) return;
-        if (incTx.confirms == 0 && order.status.code < 3) {
-            order.status = {
-                code: 2,
-                human: twist.humans[2],
-                data: {
-                    confirmations: incTx.confirms,
-                    wait: coins[order.symbolFrom].confirmations
-                }
-            };
-            mess('findTxFrom', 'exec order ' +
-                order.exchangeTxId +
-                ' Tx ' +
-                incTx.hashTx +
-                ' confirms ' +
-                incTx.confirms
-            );
-        } else if (
-            order.status.code < 3 &&
-            incTx.confirms >= coins[order.symbolFrom].confirmations
-        ) {
-            order.status = {
-                code: 3,
-                human: twist.humans[3],
-                data: {
-                    confirmations: incTx.confirms,
-                    time: timeNow()
-                }
-            };
-            order.confirmTxFrom = true;
-            order.received = incTx.value;
-        } else return;
-        tools.saveOrder(order, 'findTxFrom');
-        if (order.status.code == 3) {
-            clearTimeout(timeout);
-            clearInterval(interval);
-            utils.awaitDepositStop(order);
-            mess('findTxFrom', 'exec order ' +
-                order.exchangeTxId + ' Tx ' +
-                incTx.hashTx + ' confirmed '
-            );
-            utils.makeRefund(order);
-            return;
-        };
-        if (!depositIsFind) {
-            depositIsFind = true;
-            clearTimeout(timeout);
-            timeout = setTimeout(function() {
-                clearInterval(interval);
-                utils.awaitDepositStop(order);
-                myErrorHandler(
-                    'waitDeposit: order ' +
-                    order.exchangeTxId +
-                    ' deposit to ' +
-                    order.exchangeAddrTo +
-                    ' not confirmed in confirm period'
-                );
-                tools.setOrderStatus(order, 7, { code: 2, reason: 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: timeNow() })
-            }, twist.waitConfirmPeriod * 60000);
-        };
     },
 
     findTxTo: async function(order, interval, timeout) {
@@ -223,7 +153,7 @@ module.exports = {
                 human: twist.humans[3],
                 data: {
                     confirmations: incTx.confirms,
-                    time: timeNow()
+                    time: new Date()
                 }
             };
             order.confirmTxFrom = true;
@@ -252,24 +182,23 @@ module.exports = {
                     order.exchangeTxId +
                     ' deposit to ' +
                     order.exchangeAddrTo +
-                    ' not confirmed in confirm period'
+                    ' not confirmed in confirmation period'
                 );
-                tools.setOrderStatus(order, 7, { code: 2, reason: 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: timeNow() })
+                tools.setOrderStatus(order, 7, { code: 2, reason: 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: new Date() })
             }, twist.waitConfirmPeriod * 60000);
         };
     },
 
     awaitDepositStop: function(order) {
         coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
-
-        methods.runMethod('awaitDeposit', 'stop', order)
+        methods.awaitDeposit('stop', order)
             .catch((err) => {
                 myErrorHandler(
                     'awaitDepositStop: exec order ' +
                     order.exchangeTxId +
                     ' Tx to ' +
                     order.exchangeAddrTo +
-                    ' stop error - ' +
+                    ' stop - ' +
                     err
                 );
             });
@@ -290,15 +219,10 @@ module.exports = {
             //  !!!!TODO - возможно новый статус ордера
             mess('makeRefund', 'twist must send change ' + change + order.symbolFrom + ' to user');
         }
-        console.log(
-            timeNow() +
-            ' order ' +
-            order.exchangeTxId +
-            ' exec continue: send ' +
-            valueFact +
-            order.symbolTo +
-            ' to user'
-        );
+
+        mess('makeRefund', 'order ' +
+            order.exchangeTxId + ' exec continue: send ' +
+            valueFact + order.symbolTo + ' to user');
         var jsonData = JSON.stringify({
             from: coins[order.symbolFrom].walletFrom, // account name in api microservice
             to: order.userAddrTo,
@@ -322,9 +246,7 @@ module.exports = {
                             err
                         );
                 });
-                console.log(
-                    timeNow() +
-                    ' exec order ' +
+                mess('makeRefund', ' exec order ' +
                     order.exchangeTxId +
                     ': to user Tx hash ' +
                     order.hashTxTo
@@ -332,8 +254,7 @@ module.exports = {
                 axios
                     .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
                     .then(function(h) {
-                        console.log(
-                            timeNow() +
+                        mess('makeRefund',
                             ' exec order ' +
                             order.exchangeTxId +
                             ': ' +
@@ -376,32 +297,46 @@ module.exports = {
 
     //  TODO!!!!!
     waitRefund: function(order) {
-
-        mess('waitDeposit', 'order ' +
+        mess('waitRefund', 'order ' +
             order.exchangeTxId +
-            ' : awaiting deposit starts');
-        return
+            ' : awaiting refund confirmation starts');
         var myInterval;
         var ttlTimeOut = setTimeout(function() {
             clearInterval(myInterval);
-            exec.awaitDepositStop(order);
+            utils.awaitRefundStop(order);
             myErrorHandler(
-                'waitDeposit: order ' +
+                'waitRefund: order ' +
                 order.exchangeTxId +
-                ' deposit to ' +
-                order.exchangeAddrTo +
-                ' not receaved in ttl period'
+                ' refund to ' +
+                order.userAddrTo +
+                ' not confirmed in confirmation period'
             );
-            tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: timeNow() })
-        }, order.ttl * 60000);
+            tools.setOrderStatus(order, 7, { code: 4, reason: 'refund not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: new Date() })
+        }, twist.waitConfirmPeriod * 60000);
         myInterval = setInterval(function() {
-            if (!order.waitDepositProvider == '')
-                exec.findTxFrom(order, myInterval, ttlTimeOut)
+            if (coins[order.symbolTo].canSend)
+                utils.findTxFrom(order, myInterval, ttlTimeOut)
             else {
-                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: timeNow() })
+                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: new Date() })
             }
         }, 20000);
     },
+
+
+    awaitRefundStop: function(order) {
+        methods.refund('stop', order)
+            .catch((err) => {
+                myErrorHandler(
+                    'awaitRefundStop: exec order ' +
+                    order.exchangeTxId +
+                    ' Tx to ' +
+                    order.userAddrTo +
+                    ' stop ' +
+                    err
+                );
+            });
+    },
+
 
     //  TODO!!!!!
     checkRefundStatus: async function(order) {
@@ -414,7 +349,58 @@ module.exports = {
             else order.waitDepositProvider = res.provider;
         } else order.waitDepositProvider = '';
         tools.saveOrder(order, 'checkRefundStatus');
+    },
+
+
+    findTxFrom: async function(order, interval, timeout) {
+        var outTx = await Tx.findOne({ To: order.userAddrTo }).exec()
+            .catch((err) => {
+                myErrorHandler('findTxFrom: exec order ' +
+                    order.exchangeTxId +
+                    ' Tx find, ' +
+                    err
+                )
+            });
+        if (outTx = null) return;
+        if (outTx.confirms == 0 && order.status.code < 5) {
+            if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId + ' Tx ' +
+                outTx.hashTx + ' confirms ' + outTx.confirms);
+            order.status = {
+                code: 5,
+                human: twist.humans[5],
+                data: {
+                    confirmations: outTx.confirms,
+                    wait: coins[order.symbolTo].confirmations
+                }
+            };
+        } else if (
+            order.status.code < 6 &&
+            outTx.confirms >= coins[order.symbolTo].confirmations
+        ) {
+            order.status = {
+                code: 6,
+                human: twist.humans[6],
+                data: {
+                    archived: true,
+                    confirmations: outTx.confirms,
+                    time: new Date()
+                }
+            };
+            order.confirmTxTo = true;
+            order.sent = outTx.value;
+        } else return;
+        tools.saveOrder(order, 'findTxFrom');
+        if (order.status.code == 6) {
+            clearTimeout(timeout);
+            clearInterval(interval);
+            utils.awaitRefundStop(order);
+            mess('findTxFrom', 'exec order ' +
+                order.exchangeTxId + ' Tx ' +
+                outTx.hashTx + ' confirmed '
+            );
+            tools.arhOrder(order);
+            mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
+            return;
+        };
     }
-
-
 }
