@@ -70,17 +70,15 @@ require('./routes/tx');
 require('./routes/user');
 require('./routes/errorHandler');
 
-
 //  Load main functions and start service
 service = require('./include/engine');
-
-//  if (twist.mode != 'development') service.start(); //..manual start engine in development mode
-
-service.start();
 
 const port = process.env.PORT_TWIST || 8900;
 twist.url = twist.url + ':' + port.toString();
 
-app.listen(port, () => {
-    mess('twist', 'service listening on ' + port.toString())
+app.listen(port, async() => {
+    mess('twist', 'service listening on ' + port.toString());
+    await wait(5000);
+    //  if (twist.mode != 'development') service.start(); //..manual start engine in development mode
+    service.start();
 })

@@ -192,9 +192,9 @@ module.exports = {
         };
     },
 
-    findTxTo: async function (order, interval, timeout) {
+    findTxTo: async function(order, interval, timeout) {
         var depositIsFind = false;
-        incTx = await Tx.findOne({ addrTo: order.exchangeAddrTo }).exec()
+        incTx = await Tx.findOne({ To: order.exchangeAddrTo }).exec()
             .catch((err) => {
                 myErrorHandler('findTxTo: exec order ' +
                     order.exchangeTxId +
@@ -204,6 +204,8 @@ module.exports = {
             });
         if (incTx == null) return;
         if (incTx.confirms == 0 && order.status.code < 3) {
+            if (order.status.code == 1 || inc.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' + order.exchangeTxId + ' Tx ' +
+                incTx.hashTx + ' confirms ' + incTx.confirms);
             order.status = {
                 code: 2,
                 human: twist.humans[2],
@@ -212,13 +214,6 @@ module.exports = {
                     wait: coins[order.symbolFrom].confirmations
                 }
             };
-            mess('findTxFrom', 'exec order ' +
-                order.exchangeTxId +
-                ' Tx ' +
-                incTx.hashTx +
-                ' confirms ' +
-                incTx.confirms
-            );
         } else if (
             order.status.code < 3 &&
             incTx.confirms >= coins[order.symbolFrom].confirmations
@@ -238,19 +233,19 @@ module.exports = {
         if (order.status.code == 3) {
             clearTimeout(timeout);
             clearInterval(interval);
-            exec.awaitDepositStop(order);
+            utils.awaitDepositStop(order);
             mess('findTxTo', 'exec order ' +
                 order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirmed '
             );
-            return;
+            return utils.makeRefund(order);
         };
         if (!depositIsFind) {
             depositIsFind = true;
             clearTimeout(timeout);
-            timeout = setTimeout(function () {
+            timeout = setTimeout(function() {
                 clearInterval(interval);
-                exec.awaitDepositStop(order);
+                utils.awaitDepositStop(order);
                 myErrorHandler(
                     'waitDeposit: order ' +
                     order.exchangeTxId +
