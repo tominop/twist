@@ -60,18 +60,13 @@ module.exports = {
                     if (err)
                         return myErrorHandler("getOrderByID exec: " + err, res);
                     if (order == null) return myErrorHandler("order not foud", res);
-                    res.json({
-                        error: false,
-                        order: null,
-                        arhorder: order
-                    });
-                });
-            } else {
-                res.json({
-                    error: false,
-                    order: order
+
                 });
             }
+            res.json({
+                error: false,
+                order: order
+            });
         });
     },
 

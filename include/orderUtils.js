@@ -287,9 +287,8 @@ module.exports = {
             valueFact = valueToFix(twist.maxLimit / coins[order.symbolTo].price);
             //        var changeOrder = new Order();
             //        makeChange(changeOrder, change - minerFee);
-            console.log(
-                ' twist must send change ' + change + order.symbolFrom + ' to user'
-            );
+            //  !!!!TODO - возможно новый статус ордера
+            mess('makeRefund', 'twist must send change ' + change + order.symbolFrom + ' to user');
         }
         console.log(
             timeNow() +
@@ -345,18 +344,16 @@ module.exports = {
                         order.status = {
                             code: 6,
                             human: twist.humans[6],
-                            data: { time: timeNow() }
+                            data: { archived: true, time: new Date() }
                         };
                         order.confirmTxTo = true;
                         order.sent = valueFact;
                         tools.arhOrder(order);
-                        console.log(
-                            timeNow() + ' exec order ' + order.exchangeTxId + ' finished!'
-                        );
+                        mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
                     })
                     .catch((err) => {
                         myErrorHandler(
-                            'makeTxTo: exec order ' +
+                            'makeRefund: exec order ' +
                             order.exchangeTxId +
                             ' Tx to ' +
                             order.exchangeAddrTo +
