@@ -59,7 +59,7 @@ module.exports = {
                 exec.checkDepositStatus1(orders[order]);
             else if (orders[order].status.code == 2)
             //  => if
-                exec.checkDepositStatus2(orders[order]);
+                exec.checkDepositStatus1(orders[order]);
             else if (orders[order].status.code == 3) utils.makeRefund(orders[order]);
             else if (orders[order].status.code == 4)
                 exec.checkRefundStatus1(orders[order]);

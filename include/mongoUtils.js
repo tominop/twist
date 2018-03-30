@@ -211,18 +211,18 @@ module.exports = {
             userAddrFrom: order.userAddrFrom,
             symbolFrom: order.symbolFrom,
             valueFrom: order.valueFrom,
-            hashTxFrom: order.hashTxFrom,
-            confirmTxFrom: order.confirmTxFrom,
+            hashTxFrom: '',
+            confirmTxFrom: 0,
             userAddrTo: order.userAddrTo,
             symbolTo: order.symbolTo,
             valueTo: order.valueTo,
-            hashTxTo: order.hashTxTo,
-            confirmTxTo: order.confirmTxTo,
+            hashTxTo: '',
+            confirmTxTo: 0,
             exchangeAddrTo: order.exchangeAddrTo,
             symbol: order.symbol,
             amount: order.amount,
-            received: order.received,
-            sent: order.sent
+            received: 0,
+            sent: false
         });
         neworder.status = { code: 0, human: twist.humans[0], data: { reason: 'manual resore from archive', time: timeNow() } };
         tools.saveOrder(neworder, 'deArhOrder')

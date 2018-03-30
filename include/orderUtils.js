@@ -111,6 +111,7 @@ module.exports = {
                 ' not receaved in ttl period'
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: new Date() })
+            tools.arhOrder(order);
         }, order.ttl * 60000);
         //  checking incoming tx timer
         myInterval = setInterval(function() {
@@ -124,14 +125,25 @@ module.exports = {
 
     findTxTo: async function(order, interval, timeout) {
         var depositIsFind = false;
-        incTx = await Tx.findOne({ To: order.exchangeAddrTo }).exec()
-            .catch((err) => {
-                myErrorHandler('findTxTo: exec order ' +
-                    order.exchangeTxId +
-                    ' Tx find, ' +
-                    err
-                )
-            });
+        if (order.hashTxFrom == '') {
+            incTx = await Tx.findOne({ To: order.exchangeAddrTo }).exec()
+                .catch((err) => {
+                    myErrorHandler('findTxTo: exec order ' +
+                        order.exchangeTxId +
+                        ' Tx find, ' +
+                        err
+                    )
+                })
+        } else {
+            incTx = await Tx.findOne({ hashTx: order.hashTxFrom }).exec()
+                .catch((err) => {
+                    myErrorHandler('findTxTo: exec order ' +
+                        order.exchangeTxId +
+                        ' Tx find, ' +
+                        err
+                    )
+                })
+        };
         if (incTx == null) return;
         if (incTx.confirms == 0 && order.status.code < 3) {
             if (order.status.code == 1 || incTx.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' + order.exchangeTxId + ' Tx ' +
@@ -159,6 +171,7 @@ module.exports = {
             order.confirmTxFrom = true;
             order.received = incTx.value;
         } else return;
+        order.hashTxFrom = incTx.hashTx;
         tools.saveOrder(order, 'findTxTo');
         if (order.status.code == 3) {
             clearTimeout(timeout);
@@ -185,6 +198,7 @@ module.exports = {
                     ' not confirmed in confirmation period'
                 );
                 tools.setOrderStatus(order, 7, { code: 2, reason: 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: new Date() })
+                tools.arhOrder(order);
             }, twist.waitConfirmPeriod * 60000);
         };
     },
@@ -204,8 +218,7 @@ module.exports = {
             });
     },
 
-    /// TODO !!!
-    makeRefund: function(order) {
+    calcValueFact: function(order) {
         var change,
             valueFact = valueToFix(order.received / order.exchangeRatio);
         change = valueToFix(
@@ -218,8 +231,13 @@ module.exports = {
             //        makeChange(changeOrder, change - minerFee);
             //  !!!!TODO - возможно новый статус ордера
             mess('makeRefund', 'twist must send change ' + change + order.symbolFrom + ' to user');
-        }
+        };
+        return valueFact;
+    },
 
+    /// TODO !!!
+    makeRefund: function(order) {
+        const valueFact = utils.calcValueFact(order)
         mess('makeRefund', 'order ' +
             order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
@@ -323,7 +341,8 @@ module.exports = {
     },
 
 
-    awaitRefundStop: function(order) {
+    awaitRefundStop: function(order, timers) {
+        methods.refund('stop', order)
         methods.refund('stop', order)
             .catch((err) => {
                 myErrorHandler(

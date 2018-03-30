@@ -55,20 +55,22 @@ module.exports = {
         if ((order.status).code != 3) tools.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
         if (coins[order.symbolFrom].canSend) {
             mess('makeRefund', 'order ' + order.exchangeTxId + ' refund starts');
-            //  Start awaiting refund (outgoing Tx hook service)
+            //  start awaiting refund (run outgoing Tx hook service)
             resp = await methods.refund('start', order);
             if (!resp || resp.error) return coins[order.symbolTo].canSend = false; //   outgoing tx awating service not wotks, do not refund!!!
-            //  Load outgoing tx (outgoing Tx hook service)
+            //  in succsess start awaiting refund Tx and send data for outgoing tx (run outgoing Tx send service)
+            var refundTimers = utils.waitRefund(order);
             resp = await methods.refund('send', order);
-            if (!resp || resp.error) methods.refund('stop', order);
-                    tools.setOrderStatus(order, 4, { hash: resp.hash, time: new Date() });
-                    coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
-                    utils.waitRefund(order);
-                } else {
-                    resp = await bc();
-                };
-          //   !!!!! TODO
-        
+            if (!resp || resp.error) return utils.waitRefundStop(order, refundTimers); //..in error stop awaiting refund Tx and outgoing Tx hook service
+            tools.setOrderStatus(order, 4, { hash: resp.hash, time: new Date() });
+            coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
+        } else {
+            //   !!!!! TODO set counter errors and abort order
+            var counterr;
+            counterr++;
+        };
+        //   !!!!! TODO
+
     },
     //  TODO!!!!!
     checkRefundStatus1: async function(order) {
