@@ -22,6 +22,7 @@ global.mess = function(name, message, res) {
 global.myErrorHandler = function(message, res) {
     if (res) res.json({ error: true, response: 'Error: ' + message });
     console.log(timeNow() + ' Error: ' + message);
+    return false;
 };
 
 global.timeNow = function() {

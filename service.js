@@ -71,7 +71,7 @@ require('./routes/user');
 require('./routes/errorHandler');
 
 //  Load main functions and start service
-service = require('./include/engine');
+engine = require('./include/engine');
 
 const port = process.env.PORT_TWIST || 8900;
 twist.url = twist.url + ':' + port.toString();
@@ -79,6 +79,6 @@ twist.url = twist.url + ':' + port.toString();
 app.listen(port, async() => {
     mess('twist', 'service listening on ' + port.toString());
     await wait(5000);
-    //  if (twist.mode != 'development') service.start(); //..manual start engine in development mode
-    service.start();
+    //  if (twist.mode != 'development') engine.start(); //..manual start engine in development mode
+    engine.start();
 })

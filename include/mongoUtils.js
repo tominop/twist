@@ -58,7 +58,7 @@ module.exports = {
             if (order == null) {
                 ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
                     if (err) return myErrorHandler("getOrderByID exec: " + err, res);
-                    if (order == null) return myErrorHandler("order not foud", res);
+                    if (order == null) return myErrorHandler("order not found", res);
                     return res.json({ error: false, order: order });
                 });
             } else res.json({ error: false, order: order });
@@ -74,7 +74,7 @@ module.exports = {
                 ArhOrder.findOne({ userID: uid }).exec(function(err, order) {
                     if (err)
                         return myErrorHandler("findOrderByUserId exec: " + err, res);
-                    if (order == null) return myErrorHandler("order not foud", res);
+                    if (order == null) return myErrorHandler("order not found", res);
                     res.json({
                         error: false,
                         order: null,
@@ -99,7 +99,7 @@ module.exports = {
                     if (err)
                         return myErrorHandler("findOrderByAddr exec2: " + err, res);
                     if (order == null)
-                        return res.json({ error: true, response: "order not foud" });
+                        return res.json({ error: true, response: "order not found" });
                     //  console.log('Order ' + orderID + '  %s', order.status.toString());
                     res.json({ error: false, order: order });
                 });
@@ -113,7 +113,7 @@ module.exports = {
     setOrderStatusID: function(orderID, status, reason, res) {
         Order.findOne({ exchangeTxId: orderID }).exec(function(err, order) {
             if (err) return myErrorHandler(err, res);
-            if (order == null) return myErrorHandler("order not foud", res);
+            if (order == null) return myErrorHandler("order not found", res);
             if (status != undefined) {
                 data = { reason: reason, time: timeNow() }
                 tools.setOrderStatus(order, status, data);
@@ -140,7 +140,7 @@ module.exports = {
     deleteOrderByID: function(oid, res) {
         Order.findOneAndRemove({ exchangeTxId: oid }).exec(function(err, order) {
             if (err) return myErrorHandler("deleteOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not foud", res);
+            if (order == null) return myErrorHandler("order not found", res);
             res.json({ error: false, response: 'removed' });
         });
     },
@@ -148,7 +148,7 @@ module.exports = {
     arhOrderByID: function(oid, res) {
         Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
             if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not foud", res);
+            if (order == null) return myErrorHandler("order not found", res);
             tools.arhOrder(order, res);
         });
     },
@@ -195,7 +195,7 @@ module.exports = {
     deArhOrderByID: function(oid, res) {
         ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
             if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not foud", res);
+            if (order == null) return myErrorHandler("order not found", res);
             tools.deArhOrder(order, res);
         });
     },
@@ -286,7 +286,7 @@ module.exports = {
     getTxs: function(res) {
         Tx.find().exec(function(err, txs) {
             if (err) return myErrorHandler("getTx exec: " + err, res);
-            if (txs == null) return myErrorHandler("transactions not foud", res);
+            if (txs == null) return myErrorHandler("transactions not found", res);
             res.json({
                 error: false,
                 txs: txs
@@ -297,7 +297,7 @@ module.exports = {
     removeTxs: async function(res) {
         Tx.find().exec(async function(err, txs) {
             if (err) return myErrorHandler("getTx exec: " + err, res);
-            if (txs == null || txs[0] == null) return myErrorHandler("transactions not foud", res);
+            if (txs == null || txs[0] == null) return myErrorHandler("transactions not found", res);
             for (tx in txs) {
                 await txs[tx].remove(function(err) {
                     if (err) return myErrorHandler("removeTxs " + err);
@@ -312,7 +312,7 @@ module.exports = {
     arhTxByID: function(oid, res) {
         Tx.findOne({ orderID: oid }).exec(function(err, tx) {
             if (err) return myErrorHandler("arhTxByID exec: " + err, res);
-            if (tx == null) return myErrorHandler("transaction not foud", res);
+            if (tx == null) return myErrorHandler("transaction not found", res);
             tools.arhTx(tx, res);
         });
     },
@@ -320,7 +320,7 @@ module.exports = {
     arhTxByAddr: function(addrs, res) {
         Tx.findOne({ addrFrom: addrs }).exec(function(err, tx) {
             if (err) return myErrorHandler("arhTxByAddr exec: " + err, res);
-            if (tx == null) return myErrorHandler("transaction not foud", res);
+            if (tx == null) return myErrorHandler("transaction not found", res);
             tools.arhTx(tx, res);
         });
     },
@@ -359,7 +359,7 @@ module.exports = {
     removeTxByAddrFrom: function(addrs, res) {
         Tx.findOneAndRemove({ addrFrom: addrs }).exec(function(err, tx) {
             if (err) return myErrorHandler("removeTxByAddrFrom exec: " + err, res);
-            if (tx == null) return myErrorHandler("tx not foud", res);
+            if (tx == null) return myErrorHandler("tx not found", res);
             res.json({ error: false, response: 'removed' });
         });
     },
@@ -367,7 +367,7 @@ module.exports = {
     removeTxByAddrTo: function(addrs, res) {
         Tx.findOneAndRemove({ To: addrs }).exec(function(err, tx) {
             if (err) return myErrorHandler("removeTxByAddrTo exec: " + err, res);
-            if (tx == null) return myErrorHandler("tx not foud", res);
+            if (tx == null) return myErrorHandler("tx not found", res);
             if (res) res.json({ error: false, response: 'removed' });
         });
     },

@@ -1,10 +1,17 @@
+/*!
+ * @title twist engine - main function of Twist API service
+ * @author Oleg Tomin - <2tominop@gmail.com>
+ * @dev Basic implementaion of orders exec functions  
+ * MIT Licensed Copyright(c) 2018-2019
+ */  
+
 // regular check coins status !!!TODO update default coin options without reload service
 
 Coin = require("./coinUtils");
 
-var timerCheck = [];
-
 module.exports = {
+
+    timerCheck: [],
 
     start: function(res) {
         this.setCallPeriod(this.coinsCheck, twist.coinsCheckPeriod, 0);
@@ -15,8 +22,8 @@ module.exports = {
     },
 
     stop: function(clear, res) {
-        clearTimeout(timerCheck[0]);
-        clearTimeout(timerCheck[1]);
+        clearTimeout(engine.timerCheck[0]);
+        clearTimeout(engine.timerCheck[1]);
         if (clear === 'clear') {
             tools.removeOrders();
             tools.removeTxs();
@@ -27,9 +34,9 @@ module.exports = {
 
     setCallPeriod: function(func, timeout, ind) {
         func();
-        timerCheck[ind] = setTimeout(function check() {
+        engine.timerCheck[ind] = setTimeout(function check() {
             func();
-            timerCheck[ind] = setTimeout(check, timeout * 60000);
+            engine.timerCheck[ind] = setTimeout(check, timeout * 60000);
         }, timeout * 60000); //  check period in min.
     },
 
@@ -52,20 +59,19 @@ module.exports = {
     helthCheck: function() {},
 
     orderCheck: async function() {
+        var key, order;
         var orders = await tools.getNewOrders();
-        for (order in orders) {
-            if (orders[order].status.code == 0) exec.takeOrder(orders[order]);
-            else if (orders[order].status.code == 1)
-                exec.checkDepositStatus1(orders[order]);
-            else if (orders[order].status.code == 2)
-            //  => if
-                exec.checkDepositStatus1(orders[order]);
-            else if (orders[order].status.code == 3) utils.makeRefund(orders[order]);
-            else if (orders[order].status.code == 4)
-                exec.checkRefundStatus1(orders[order]);
-            else if (orders[order].status.code == 5)
-                exec.checkRefundStatus2(orders[order]);
-            else if (orders[order].status.code > 5) tools.arhOrder(orders[order]);
-        }
+        for (key in orders) {
+            order = orders[key];
+            if ( order.status.code == 0) exec.takeOrder(order);
+            else if (order.status.code == 1 || order.status.code == 2) 
+                exec.checkDepositStatus(order);
+            else if (order.status.code == 3) utils.makeRefund(order);
+            else if (order.status.code == 4)
+                exec.checkRefundStatus1(order);
+            else if (order.status.code == 5)
+                exec.checkRefundStatus2(order);
+            else if (order.status.code > 5) tools.arhOrder(order);
+        };
     }
 };

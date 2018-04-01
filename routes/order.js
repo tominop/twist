@@ -8,7 +8,7 @@ Addrs = require("../models/addresses");
 execOrders = []; //  array of executed orders
 
 //  global functions
-methods = require("../include/orderApiUtils");
+methods = require("../include/orderMethods");
 tools = require("../include/mongoUtils");
 exec = require("../include/orderExec");
 utils = require("../include/orderUtils");
