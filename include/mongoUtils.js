@@ -99,6 +99,27 @@ module.exports = {
                     if (err)
                         return myErrorHandler("findOrderByAddr exec2: " + err, res);
                     if (order == null)
+                    //                    return res.json({ error: true, response: "order not found" });
+                        return tools.findArhOrderByAddr(addr, res);
+                    //  console.log('Order ' + orderID + '  %s', order.status.toString());
+                    res.json({ error: false, order: order });
+                });
+            } else {
+                //  console.log('Order ' + orderID + '  %s', order.status.toString());
+                res.json({ error: false, order: order });
+            }
+        });
+    },
+
+    findArhOrderByAddr: function(addr, res) {
+        ArhOrder.findOne({ userAddrFrom: addr }).exec(function(err, order) {
+            if (err)
+                return myErrorHandler("findOrderByAddr exec1: " + err, res);
+            if (order == null) {
+                ArhOrder.findOne({ userAddrTo: addr }).exec(function(err, order) {
+                    if (err)
+                        return myErrorHandler("findOrderByAddr exec2: " + err, res);
+                    if (order == null)
                         return res.json({ error: true, response: "order not found" });
                     //  console.log('Order ' + orderID + '  %s', order.status.toString());
                     res.json({ error: false, order: order });
@@ -109,6 +130,58 @@ module.exports = {
             }
         });
     },
+
+    findOrdersByUid: async function(uid, res) {
+        var orders = [],
+            ords = [];
+        ords = await Order.find({ userID: uid }).exec()
+            //        ords = await Order.find({ userAddrFrom: addr, userAddrTo: addr, exchangeAddrTo: addr }).exec()
+            .catch((err) => {
+                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+            })
+        if (ords != null) {
+            for (key in ords) {
+                orders[orders.length] = Object.assign({}, ords[key]._doc);
+            };
+        }
+
+
+        ords = await ArhOrder.find({ userID: uid }).exec()
+            .catch((err) => {
+                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+            })
+        if (ords != null)
+            for (key in ords) {
+                orders[orders.length] = Object.assign({}, ords[key]._doc)
+            }
+        if (orders == null) return res.json({ error: true, response: "orders not found" });
+        res.json({ error: false, orders: orders });
+    },
+
+
+
+    findOrdersByAddr: async function(addr, res) {
+        var orders = [],
+            ords = [];
+        var query = Order.find({});
+        ords = await query.or([{ userAddrFrom: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
+            //        ords = await Order.find({ userAddrFrom: addr, userAddrTo: addr, exchangeAddrTo: addr }).exec()
+            .catch((err) => {
+                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+            })
+        if (ords != null && ords[0] != null)
+            for (key in ords) { orders[orders.length] = ords[key]._doc };
+        var query = ArhOrder.find({});
+        ords = await query.or([{ userAddrFrom: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
+            .catch((err) => {
+                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+            })
+        if (ords != null && ords[0] != null)
+            for (key in ords) { orders[orders.length] = ords[key]._doc }
+        if (orders == null || orders[0] == null) return res.json({ error: true, response: "orders not found" });
+        res.json({ error: false, orders: orders });
+    },
+
 
     setOrderStatusID: function(orderID, status, reason, res) {
         Order.findOne({ exchangeTxId: orderID }).exec(function(err, order) {
@@ -126,8 +199,14 @@ module.exports = {
         order.status = { code: code, human: twist.humans[code], data: data };
         tools.saveOrder(order, 'setOrderStatus');
         var ind = utils.orderToInd(order.exchangeTxId); //  find orderId in array of executed orders
-        if (!ind) ind = execOrders.length;
-        execOrders[ind] = { id: order.exchangeTxId, status: code, time: new Date() };
+        if (ind < 0) {
+            execOrders[execOrders.length] = { id: order.exchangeTxId, status: code, time: new Date() };
+            coins[order.symbolTo].reserv = coins[order.symbolTo].reserv + valueToFix(coins[order.symbolTo].price * order.valueTo);
+            return;
+        };
+        if (code < 6) return;
+        execOrders.splice(ind, 1); //  remove order from order exec array
+        coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - valueToFix(coins[order.symbolTo].price * order.valueTo);
     },
 
     saveOrder: function(order, name) {

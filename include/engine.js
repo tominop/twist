@@ -1,11 +1,13 @@
 /*!
- * @title twist engine - main function of Twist API service
+ * @title engine.js - main function of twist exchange service
  * @author Oleg Tomin - <2tominop@gmail.com>
- * @dev Basic implementaion of orders exec functions  
+ * @dev Basic implementaion of main functions  
  * MIT Licensed Copyright(c) 2018-2019
- */  
+ */
 
-// regular check coins status !!!TODO update default coin options without reload service
+// regular check coins status 
+
+//  !!!TODO update default coin options without reload service
 
 Coin = require("./coinUtils");
 
@@ -48,7 +50,7 @@ module.exports = {
                 coins[coin].balance = 0;
                 coins[coin].minerFee = 0;
                 coins[coin].price = 0;
-                //        coins[coin].reserv = 0;
+                //  !!!TODO        coins[coin].reserv = 0;
                 Coin.getPrice(coin, twist.priceBase);
                 Coin.getBalance(coin);
                 Coin.getReserv(coin);
@@ -63,8 +65,8 @@ module.exports = {
         var orders = await tools.getNewOrders();
         for (key in orders) {
             order = orders[key];
-            if ( order.status.code == 0) exec.takeOrder(order);
-            else if (order.status.code == 1 || order.status.code == 2) 
+            if (order.status.code == 0) exec.takeOrder(order);
+            else if (order.status.code == 1 || order.status.code == 2)
                 exec.checkDepositStatus(order);
             else if (order.status.code == 3) utils.makeRefund(order);
             else if (order.status.code == 4)

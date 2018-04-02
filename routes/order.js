@@ -67,12 +67,28 @@ app.get("/twist/status", function(req, res) {
     tools.setOrderStatusID(orderID, status, reason, res);
 });
 
-//  getOrderByAddr() route
+//  getOrderByAddrFrom() route
 app.get("/twist/addr/:addr", function(req, res) {
     const addr = req.params.addr;
     if (addr == undefined || addr == "")
         return myErrorHandler("getOrderByAddr: invalid address", res);
     tools.findOrderByAddr(addr, res);
+});
+
+//  getOrderByAddrFrom() route
+app.get("/twist/ordersaddr/:addr", function(req, res) {
+    const addr = req.params.addr;
+    if (addr == undefined || addr == "")
+        return myErrorHandler("getOrdersByAddr: invalid address", res);
+    tools.findOrdersByAddr(addr, res);
+});
+
+//  getOrderByUserId() route
+app.get("/twist/ordersuid/:uid", function(req, res) {
+    const uid = req.params.uid;
+    if (uid == undefined || uid == "")
+        return myErrorHandler("getOrderByUserId: invalid UserId", res);
+    tools.findOrdersByUid(uid, res);
 });
 
 //  getOrderByUserId() route
