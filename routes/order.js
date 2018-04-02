@@ -13,13 +13,13 @@ tools = require("../include/mongoUtils");
 exec = require("../include/orderExec");
 utils = require("../include/orderUtils");
 
-//  main newOrder() route //  create new order and start exchange
+//  main newOrder() route  //  create new order and start exchange
 
 app.post("/twist/neworder", function(req, res) {
     if (invalidUserID(req.body.userID))
         return myErrorHandler("neworder: invalid userID", res);
-    if (invalidAddr(req.body.symbolFrom, req.body.userAddrFrom))
-        return myErrorHandler("neworder: invalid user Address From", res);
+    if (invalidAddr(req.body.symbolFrom, req.body.userAddrRefund))
+        return myErrorHandler("neworder: invalid user Refund address", res);
     if (invalidAddr(req.body.symbolTo, req.body.userAddrTo))
         return myErrorHandler("neworder: invalid user Address To", res);
     if (invalidValue(req.body.symbolFrom, req.body.valueFrom))

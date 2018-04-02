@@ -135,7 +135,6 @@ module.exports = {
         var orders = [],
             ords = [];
         ords = await Order.find({ userID: uid }).exec()
-            //        ords = await Order.find({ userAddrFrom: addr, userAddrTo: addr, exchangeAddrTo: addr }).exec()
             .catch((err) => {
                 return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
             })
@@ -164,15 +163,14 @@ module.exports = {
         var orders = [],
             ords = [];
         var query = Order.find({});
-        ords = await query.or([{ userAddrFrom: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
-            //        ords = await Order.find({ userAddrFrom: addr, userAddrTo: addr, exchangeAddrTo: addr }).exec()
+        ords = await query.or([{ userAddrFrom: addr }, { userAddrRefund: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
             .catch((err) => {
                 return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
             })
         if (ords != null && ords[0] != null)
             for (key in ords) { orders[orders.length] = ords[key]._doc };
         var query = ArhOrder.find({});
-        ords = await query.or([{ userAddrFrom: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
+        ords = await query.or([{ userAddrFrom: addr }, { userAddrRefund: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
             .catch((err) => {
                 return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
             })
@@ -245,6 +243,10 @@ module.exports = {
             valueFrom: order.valueFrom,
             hashTxFrom: order.hashTxFrom,
             confirmTxFrom: order.confirmTxFrom,
+            userAddrRefund: order.userAddrRefund,
+            valueRefund: order.valueRefund,
+            hashTxRefund: order.hashTxRefund,
+            confirmTxRefund: order.confirmTxRefund,
             userAddrTo: order.userAddrTo,
             symbolTo: order.symbolTo,
             valueTo: order.valueTo,
@@ -292,6 +294,10 @@ module.exports = {
             valueFrom: order.valueFrom,
             hashTxFrom: '',
             confirmTxFrom: 0,
+            userAddrRefund: order.userAddrRefund,
+            valueRefund: 0,
+            hashTxRefund: '',
+            confirmTxRefund: 0,
             userAddrTo: order.userAddrTo,
             symbolTo: order.symbolTo,
             valueTo: order.valueTo,

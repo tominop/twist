@@ -12,7 +12,7 @@ module.exports = {
         if (!utils.validateUser(data.userID, res)) return;
         if (!utils.validateCoins(data.symbolFrom, data.valueFrom, data.symbolTo, data.valueTo, res)) return;
         const userID = data.userID,
-            userAddrFrom = data.userAddrFrom,
+            userAddrRefund = data.userAddrRefund || '',
             symbolFrom = data.symbolFrom,
             valueFrom = valueToFix(data.valueFrom),
             userAddrTo = data.userAddrTo,
@@ -29,11 +29,15 @@ module.exports = {
             status: { code: 0, human: twist.humans[0], data: { time: new Date() } },
             exchangeRatio: ratio,
             userID: userID,
-            userAddrFrom: userAddrFrom,
+            userAddrFrom: '',
             symbolFrom: symbolFrom,
             valueFrom: valueFrom,
             hashTxFrom: '',
             confirmTxFrom: false,
+            userAddrRefund: userAddrRefund,
+            valueRefund: 0,
+            hashTxRefund: '',
+            confirmTxRefund: false,
             userAddrTo: userAddrTo,
             symbolTo: symbolTo,
             valueTo: valueTo,
@@ -140,6 +144,7 @@ module.exports = {
             order.received = incTx.value;
         } else return;
         order.hashTxFrom = incTx.hashTx;
+        order.userAddrFrom = incTx.addrFrom;
         tools.saveOrder(order, 'findTxTo');
         if (order.status.code == 3) {
             clearTimeout(timeout);
@@ -363,6 +368,8 @@ module.exports = {
     },
 
     validateCoins: function(symbolFrom, valueFrom, symbolTo, valueTo, res) {
+        if (coins[symbolFrom].testnet != coins[symbolTo].testnet)
+            return myErrorHandler('newOrder: twist can not exchange real coins for testnet coins', res);
         if (!coins[symbolFrom].canReceive)
             return myErrorHandler('newOrder: twist can not receive ' + symbolFrom, res);
         if (!coins[symbolTo].canSend)
