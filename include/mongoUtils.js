@@ -468,7 +468,7 @@ module.exports = {
             });
         }
         adr.userId = uid;
-        if (++adr.counter > 3) adr.active = false;
+        if (++adr.counter > 0) adr.active = false;
         adr.save().catch((err) => {
             myErrorHandler('getAddrTo address save ' + err)
         });
