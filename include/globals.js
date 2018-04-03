@@ -8,10 +8,6 @@ global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numCon
 global.coins = require(twist.mode == 'development' ? '../private/coins' : './coins');
 
 
-
-
-
-
 //  global functions
 
 global.mess = function(name, message, res) {
