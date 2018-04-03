@@ -76,8 +76,8 @@ module.exports = {
     },
     //  TODO!!!!!
     checkRefundStatus1: async function(order) {
-        return;
-        if (coins[order.symbolFrom].canReceive) {
+        return utils.startRefundWait(order);
+        if (coins[order.symbolTo].enabled) {
             resp = await methods.awaitDeposit('check', order)
             if (resp && !reps.error) return
                 //  need restart awaitDeposit
@@ -88,7 +88,7 @@ module.exports = {
     },
 
     //  TODO!!!!!
-    checkRefundStatus1: async function(order) {
+    checkRefundStatus2: async function(order) {
         return;
         if (coins[order.symbolFrom].canReceive) {
             resp = await methods.awaitDeposit('check', order)

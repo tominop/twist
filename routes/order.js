@@ -31,12 +31,12 @@ app.post("/twist/neworder", function(req, res) {
 
 //  start engine route
 app.get("/twist/startengine", function(req, res) {
-    service.start(res);
+    engine.start(res);
 });
 
 //  stop engine route
 app.get("/twist/stopengine/:clear", function(req, res) {
-    service.stop(req.params.clear, res);
+    engine.stop(req.params.clear, res);
 });
 
 //  getOrders() route
@@ -118,4 +118,12 @@ app.get("/twist/dearhorder/:orderID", function(req, res) {
     if (invalidData(req.params.orderID))
         return myErrorHandler("arhorder: invalid order ID", res);
     tools.deArhOrderByID(req.params.orderID, res);
+});
+
+
+//  refundOrderByID() route
+app.get("/twist/refundorder/:orderID", function(req, res) {
+    if (invalidData(req.params.orderID))
+        return myErrorHandler("arhorder: invalid order ID", res);
+    tools.refundOrderByID(req.params.orderID, res);
 });

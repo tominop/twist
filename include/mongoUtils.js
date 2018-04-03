@@ -65,8 +65,6 @@ module.exports = {
         });
     },
 
-
-
     findOrderByUserId: function(uid, res) {
         Order.findOne({ userID: uid }).exec(function(err, order) {
             if (err) return myErrorHandler("findOrderByUserId exec: " + err, res);
@@ -157,8 +155,6 @@ module.exports = {
         res.json({ error: false, orders: orders });
     },
 
-
-
     findOrdersByAddr: async function(addr, res) {
         var orders = [],
             ords = [];
@@ -212,7 +208,6 @@ module.exports = {
             myErrorHandler(name + ': order save ' + err)
         });
     },
-
 
     deleteOrderByID: function(oid, res) {
         Order.findOneAndRemove({ exchangeTxId: oid }).exec(function(err, order) {
@@ -325,15 +320,25 @@ module.exports = {
             });
     },
 
+    refundOrderByID: function(oid, res) {
+        Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
+            if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
+            if (order == null) return myErrorHandler("order not found", res);
+            utils.makeRefund(order, res);
+        });
+    },
+
     //  Tx mongo utils
 
     incomingTx: async function(tx, res) { //  web hook handler
         // const tx = data.tx;
         Tx.findOne({ hashTx: tx.hash })
             .exec(async function(err, existTx) {
+                var oid;
                 if (err) return myErrorHandler("incoming Tx: " + err, res)
                 if (existTx == null) {
-                    var oid = await tools.findOrderID(tx.addrFrom);
+                    if (tx.orderID == '') oid = await tools.findOrderID(tx.addrFrom)
+                    else oid = tx.orderID;
                     existTx = new Tx({
                         hashTx: tx.hash,
                         orderID: oid,
@@ -343,7 +348,6 @@ module.exports = {
                         value: tx.value,
                         To: tx.To
                     });
-
                 } else existTx.confirms = tx.confirms;
                 existTx.save(function(err) {
                     if (err) return myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err);
@@ -458,7 +462,7 @@ module.exports = {
     },
 
     getAddressTo: async function(coin, uid, res) {
-        if (coin = 'BTC') coin = 'BTC3'
+        if (coin == 'BTC') coin = 'BTC3'
         var adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
             return myErrorHandler("getAddrTo: " + err, res)
         });

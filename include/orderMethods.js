@@ -49,9 +49,21 @@ module.exports = {
         });
     },
 
-    awaitRefund1: async function(data) {
-        setTimeout(() => {
-            return new Error('eroor in btc3');
-        }, 1000)
-    }
+    awaitRefund: async function(order, action) {
+        mess('awaitRefund', action + 'ing now for odrer id ' + order.exchangeTxId + ', coin ' + order.symbolTo);
+        var data = {
+            addrs: order.userAddrTo
+        };
+        if (action == 'start') {
+            data.confirms = coins[order.symbolTo].confirmations;
+            data.url = twist.url + '/twist/incomingtx';
+        };
+        return axios.post(
+                coins[order.symbolTo].api + action + 'WaitTx', data)
+            .catch((err) => {
+                myErrorHandler('awaitRefund ' + action + 'ing for order id ' +
+                    order.exchangeTxId + ', coin ' + order.symbolTo + ' ' + err);
+            });
+    },
+
 }

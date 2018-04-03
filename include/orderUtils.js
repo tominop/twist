@@ -181,7 +181,7 @@ module.exports = {
     },
 
     /// TODO !!!
-    makeRefund: function(order) {
+    makeRefund: function(order, res) {
         const valueFact = utils.calcValueFact(order)
         mess('makeRefund', 'order ' +
             order.exchangeTxId + ' exec continue: send ' +
@@ -191,15 +191,15 @@ module.exports = {
             to: order.userAddrTo,
             value: valueFact
         });
-        axios
-            .get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
-            .then(function(outTx) {
+        axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
+            .then(async function(outTx) {
                 order.status = {
                     code: 4,
                     human: twist.humans[4],
                     data: { hash: outTx.data.hash }
                 };
                 order.hashTxTo = outTx.data.hash;
+                if (res) res.json({ error: false, hash: outTx.data.hash });
                 order.save(function(err) {
                     if (err)
                         return myErrorHandler(
@@ -214,37 +214,49 @@ module.exports = {
                     ': to user Tx hash ' +
                     order.hashTxTo
                 ); //  !!!TODO correct awat Tx to user
-                axios
-                    .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
-                    .then(function(h) {
-                        mess('makeRefund',
-                            ' exec order ' +
-                            order.exchangeTxId +
-                            ': ' +
-                            coins[order.symbolTo].symbol +
-                            ' Tx confirmed in block ' +
-                            h.data.block
-                        );
-                        order.status = {
-                            code: 6,
-                            human: twist.humans[6],
-                            data: { archived: true, time: new Date() }
-                        };
-                        order.confirmTxTo = true;
-                        order.sent = valueFact;
-                        tools.arhOrder(order);
-                        mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
-                    })
-                    .catch((err) => {
-                        myErrorHandler(
-                            'makeRefund: exec order ' +
-                            order.exchangeTxId +
-                            ' Tx to ' +
-                            order.exchangeAddrTo +
-                            ' not confirmed, ' +
-                            err
-                        );
-                    });
+                var tx = {
+                    addrFrom: '',
+                    hashTx: order.hashTxTo,
+                    orderID: order.exchangeTxId,
+                    createDateUTC: '',
+                    confirms: 0,
+                    value: valueFact,
+                    To: order.userAddrTo
+                };
+                incomingTx(tx);
+                startRefundWait(order);
+
+                /*                axios
+                                    .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
+                                    .then(function(h) {
+                                        mess('makeRefund',
+                                            ' exec order ' +
+                                            order.exchangeTxId +
+                                            ': ' +
+                                            coins[order.symbolTo].symbol +
+                                            ' Tx confirmed in block ' +
+                                            h.data.block
+                                        );
+                                        order.status = {
+                                            code: 6,
+                                            human: twist.humans[6],
+                                            data: { archived: true, time: new Date() }
+                                        };
+                                        order.confirmTxTo = true;
+                                        order.sent = valueFact;
+                                        tools.arhOrder(order);
+                                        mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
+                                    })
+                                    .catch((err) => {
+                                        myErrorHandler(
+                                            'makeRefund: exec order ' +
+                                            order.exchangeTxId +
+                                            ' Tx to ' +
+                                            order.exchangeAddrTo +
+                                            ' not confirmed, ' +
+                                            err
+                                        );
+                                    }); */
             })
             .catch((err) => {
                 myErrorHandler(
@@ -253,13 +265,15 @@ module.exports = {
                     ': Tx to ' +
                     order.exchangeAddrTo +
                     ' not created, ' +
-                    err
+                    err, res
                 );
             });
     },
 
     //  TODO!!!!!
-    startRefundWait: function(order) {
+    startRefundWait: async function(order) {
+        resp = await methods.awaitRefund(order, 'start');
+        if (!resp || resp.error) return;
         mess('waitRefund', 'order ' +
             order.exchangeTxId +
             ' : awaiting refund confirmation starts');
@@ -277,10 +291,10 @@ module.exports = {
             tools.setOrderStatus(order, 7, { code: 4, reason: 'refund not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: new Date() })
         }, twist.waitConfirmPeriod * 60000);
         myInterval = setInterval(function() {
-            if (coins[order.symbolTo].canSend)
+            if (coins[order.symbolTo].enabled)
                 utils.findTxFrom(order, myInterval, ttlTimeOut)
             else {
-                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: new Date() })
+                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: new Date() })
             }
         }, 20000);
     },
@@ -288,17 +302,6 @@ module.exports = {
 
     stopRefundWait: function(order, timers) {
         methods.refund('stop', order)
-        methods.refund('stop', order)
-            .catch((err) => {
-                myErrorHandler(
-                    'stopRefundWait: exec order ' +
-                    order.exchangeTxId +
-                    ' Tx to ' +
-                    order.userAddrTo +
-                    ' stop ' +
-                    err
-                );
-            });
     },
 
 
@@ -316,14 +319,25 @@ module.exports = {
     },
 
     findTxFrom: async function(order, interval, timeout) {
-        var outTx = await Tx.findOne({ To: order.userAddrTo }).exec()
-            .catch((err) => {
-                myErrorHandler('findTxFrom: exec order ' +
-                    order.exchangeTxId +
-                    ' Tx find, ' +
-                    err
-                )
-            });
+        if (order.hashTxTo == '') {
+            outTx = await Tx.findOne({ To: order.userAddrTo }).exec()
+                .catch((err) => {
+                    myErrorHandler('findTxFrom: exec order ' +
+                        order.exchangeTxId +
+                        ' Tx find, ' +
+                        err
+                    )
+                })
+        } else {
+            outTx = await Tx.findOne({ hashTx: order.hashTxTo }).exec()
+                .catch((err) => {
+                    myErrorHandler('findTxFrom: exec order ' +
+                        order.exchangeTxId +
+                        ' Tx find, ' +
+                        err
+                    )
+                })
+        };
         if (outTx = null) return;
         if (outTx.confirms == 0 && order.status.code < 5) {
             if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId + ' Tx ' +
@@ -413,8 +427,8 @@ module.exports = {
     },
 
     calcValueFact: function(order) {
-        var change,
-            valueFact = valueToFix(order.received / order.exchangeRatio);
+        var change, valueFact;
+        valueFact = valueToFix(order.received / order.exchangeRatio);
         change = valueToFix(
             order.received - twist.maxLimit / coins[order.symbolFrom].price
         );
