@@ -429,14 +429,11 @@ module.exports = {
         return -1;
     },
 
-<<<<<<< HEAD
     rmOrderFromArray: function(oid) {
         var ind = this.orderToInd(oid);
         if (ind > -1) execOrders.splice(ind, 1)
     },
 
-=======
->>>>>>> 41ed49a57e4d3369adfd42955a91872cbbfb3bca
     calcValueFact: function(order) {
         var change, valueFact;
         valueFact = valueToFix(order.received / order.exchangeRatio);
