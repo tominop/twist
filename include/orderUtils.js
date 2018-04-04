@@ -83,7 +83,6 @@ module.exports = {
             );
             tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: new Date() })
             tools.arhOrder(order);
-            utils.rmOrderFromArray(order.exchangeTxId);
         }, order.ttl * 60000);
         //  checking incoming tx timer
         myInterval = setInterval(function() {
@@ -431,7 +430,8 @@ module.exports = {
     },
 
     rmOrderFromArray: function(oid) {
-
+        var ind = this.orderToInd(oid);
+        if (ind > -1) execOrders.splice(ind, 1)
     },
 
     calcValueFact: function(order) {
