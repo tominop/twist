@@ -195,12 +195,12 @@ module.exports = {
         var ind = utils.orderToInd(order.exchangeTxId); //  find orderId in array of executed orders
         if (ind < 0) {
             execOrders[execOrders.length] = { id: order.exchangeTxId, status: code, time: new Date() };
-            coins[order.symbolTo].reserv = coins[order.symbolTo].reserv + valueToFix(coins[order.symbolTo].price * order.valueTo);
+            coins[order.symbolTo].reserv = coins[order.symbolTo].reserv + order.valueTo;
             return;
         };
         if (code < 6) return;
         execOrders.splice(ind, 1); //  remove order from order exec array
-        coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - valueToFix(coins[order.symbolTo].price * order.valueTo);
+        coins[order.symbolTo].reserv = coins[order.symbolTo].reserv - order.valueTo;
     },
 
     saveOrder: function(order, name) {
@@ -350,8 +350,8 @@ module.exports = {
                     });
                 } else existTx.confirms = tx.confirms;
                 existTx.save(function(err) {
-                    if (err) return myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err);
-                    res.status(200).send('Ok');
+                    if (err) return myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err, res);
+                    if (res) res.status(200).send('Ok');
                 });
             });
     },
@@ -462,7 +462,7 @@ module.exports = {
     },
 
     getAddressTo: async function(coin, uid, res) {
-        if (coin == 'BTC') coin = 'BTC3'
+        if (coin == 'ETHR') coin = 'ETH'
         var adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
             return myErrorHandler("getAddrTo: " + err, res)
         });

@@ -72,7 +72,7 @@ module.exports = {
             else if (order.status.code == 4)
                 exec.checkRefundStatus1(order);
             else if (order.status.code == 5)
-                exec.checkRefundStatus2(order);
+                exec.checkRefundStatus1(order);
             else if (order.status.code > 5) tools.arhOrder(order);
         };
     }

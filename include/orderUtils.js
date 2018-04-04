@@ -12,10 +12,10 @@ module.exports = {
         if (!utils.validateUser(data.userID, res)) return;
         if (!utils.validateCoins(data.symbolFrom, data.valueFrom, data.symbolTo, data.valueTo, res)) return;
         const userID = data.userID,
-            userAddrRefund = normilizeAddr(data.symbolFrom, data.userAddrRefund),
+            userAddrRefund = utils.normalizeAddr(data.symbolFrom, data.userAddrRefund),
             symbolFrom = data.symbolFrom,
             valueFrom = valueToFix(data.valueFrom),
-            userAddrTo = normilizeAddr(data.symbolTo, data.userAddrTo),
+            userAddrTo = utils.normalizeAddr(data.symbolTo, data.userAddrTo),
             symbolTo = data.symbolTo,
             valueTofromUser = valueToFix(data.valueTo);
         const ratio = valueToFix(coins[symbolTo].price / coins[symbolFrom].price);
@@ -181,7 +181,7 @@ module.exports = {
 
     /// TODO !!!
     makeRefund: function(order, res) {
-        if (order.symbolTo.substr(0,2) == 'ET' && (order.userAddrTo.substr(0,2)!= '0x')) order.userAddrTo = '0x' + order.userAddrTo;
+        if (order.symbolTo.substr(0, 2) == 'ET' && (order.userAddrTo.substr(0, 2) != '0x')) order.userAddrTo = '0x' + order.userAddrTo;
         const valueFact = utils.calcValueFact(order)
         mess('makeRefund', 'order ' +
             order.exchangeTxId + ' exec continue: send ' +
@@ -201,30 +201,25 @@ module.exports = {
                 order.hashTxTo = outTx.data.hash;
                 if (res) res.json({ error: false, hash: outTx.data.hash });
                 order.save(function(err) {
-                    if (err)
-                        return myErrorHandler(
-                            'makeTxTo: exec order ' +
-                            order.exchangeTxId +
-                            ' save, ' +
-                            err
-                        );
+                    if (err) return myErrorHandler(
+                        'makeTxTo: exec order ' +
+                        order.exchangeTxId +
+                        ' save, ' + err);
                 });
-                mess('makeRefund', ' exec order ' +
-                    order.exchangeTxId +
-                    ': to user Tx hash ' +
-                    order.hashTxTo
-                ); //  !!!TODO correct awat Tx to user
+                mess('makeRefund', ' exec order ' + order.exchangeTxId +
+                    ': to user Tx hash ' + order.hashTxTo);
+                //  !!!TODO correct awat Tx to user
                 var tx = {
                     addrFrom: '',
-                    hashTx: order.hashTxTo,
+                    hash: order.hashTxTo,
                     orderID: order.exchangeTxId,
                     createDateUTC: '',
                     confirms: 0,
                     value: valueFact,
                     To: order.userAddrTo
                 };
-                incomingTx(tx);
-                startRefundWait(order);
+                tools.incomingTx(tx);
+                utils.startRefundWait(order);
 
                 /*                axios
                                     .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
@@ -300,23 +295,23 @@ module.exports = {
     },
 
 
-    stopRefundWait: function(order, timers) {
-        methods.refund('stop', order)
+    stopRefundWait: function(order) {
+        methods.awaitRefund(order, 'stop')
     },
 
 
     //  TODO!!!!!
-    checkRefundStatus: async function(order) {
-        if (coins[order.symbolFrom].canReceive) {
-            res = await methods.runMethod('awaitDeposit', 'check', order)
-            if (!res.error) return
-                //  need restart awaitDeposit
-            res = await methods.runMethod('awaitDeposit', 'start', order);
-            if (res.error) order.waitDepositProvider = ''
-            else order.waitDepositProvider = res.provider;
-        } else order.waitDepositProvider = '';
-        tools.saveOrder(order, 'checkRefundStatus');
-    },
+    /*    checkRefundStatus: async function(order) {
+            if (coins[order.symbolFrom].canReceive) {
+                //res = await methods.//not avaible runMethod('awaitDeposit', 'check', order)
+                if (!res.error) return
+                    //  need restart awaitDeposit
+                //res = await methods.//not avaible runMethod('awaitDeposit', 'start', order);
+                if (res.error) order.waitDepositProvider = ''
+                else order.waitDepositProvider = res.provider;
+            } else order.waitDepositProvider = '';
+            tools.saveOrder(order, 'checkRefundStatus');
+        }, */
 
     findTxFrom: async function(order, interval, timeout) {
         if (order.hashTxTo == '') {
@@ -337,8 +332,16 @@ module.exports = {
                         err
                     )
                 })
+            if (outTx == null) outTx = await Tx.findOne({ To: order.userAddrTo }).exec()
+                .catch((err) => {
+                    myErrorHandler('findTxFrom: exec order ' +
+                        order.exchangeTxId +
+                        ' Tx find, ' +
+                        err
+                    )
+                })
         };
-        if (outTx = null) return;
+        if (outTx == null) return;
         if (outTx.confirms == 0 && order.status.code < 5) {
             if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId + ' Tx ' +
                 outTx.hashTx + ' confirms ' + outTx.confirms);
@@ -354,20 +357,11 @@ module.exports = {
             order.status.code < 6 &&
             outTx.confirms >= coins[order.symbolTo].confirmations
         ) {
-            order.status = {
-                code: 6,
-                human: twist.humans[6],
-                data: {
-                    archived: true,
-                    confirmations: outTx.confirms,
-                    time: new Date()
-                }
-            };
             order.confirmTxTo = true;
             order.sent = outTx.value;
         } else return;
         tools.saveOrder(order, 'findTxFrom');
-        if (order.status.code == 6) {
+        if (order.confirmTxTo) {
             clearTimeout(timeout);
             clearInterval(interval);
             utils.stopRefundWait(order);
@@ -375,6 +369,12 @@ module.exports = {
                 order.exchangeTxId + ' Tx ' +
                 outTx.hashTx + ' confirmed '
             );
+            tools.setOrderStatus(order, 6, {
+                archived: true,
+                confirmations: outTx.confirms,
+                time: new Date()
+            });
+            tools.arhTx(outTx);
             tools.arhOrder(order);
             mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
             return;
@@ -414,10 +414,10 @@ module.exports = {
         });
     },
 
-    normilizeAddr: function(coin, address) {
-        if (coin.substr(0,2) != 'ET') return address;
+    normalizeAddr: function(coin, address) {
+        if (coin.substr(0, 2) != 'ET') return address;
         address = address.toLowerCase();
-        if (address.substr(0,2)!= '0x') address = '0x' + address;
+        if (address.substr(0, 2) != '0x') address = '0x' + address;
         return address;
     },
 
@@ -429,11 +429,14 @@ module.exports = {
         return -1;
     },
 
+<<<<<<< HEAD
     rmOrderFromArray: function(oid) {
         var ind = this.orderToInd(oid);
         if (ind > -1) execOrders.splice(ind, 1)
     },
 
+=======
+>>>>>>> 41ed49a57e4d3369adfd42955a91872cbbfb3bca
     calcValueFact: function(order) {
         var change, valueFact;
         valueFact = valueToFix(order.received / order.exchangeRatio);

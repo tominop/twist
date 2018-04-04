@@ -15,6 +15,7 @@ module.exports = {
         if (action == 'start') {
             data.confirms = coins[order.symbolFrom].confirmations;
             data.url = twist.url + '/twist/incomingtx';
+            data.hash = ''
         };
         return axios.post(
                 coins[order.symbolFrom].api + action + 'WaitTx', data)
@@ -57,6 +58,7 @@ module.exports = {
         if (action == 'start') {
             data.confirms = coins[order.symbolTo].confirmations;
             data.url = twist.url + '/twist/incomingtx';
+            data.hash = order.hashTxTo
         };
         return axios.post(
                 coins[order.symbolTo].api + action + 'WaitTx', data)
