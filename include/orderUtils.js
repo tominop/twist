@@ -90,7 +90,7 @@ module.exports = {
             if (coins[order.symbolFrom].canReceive)
                 utils.findTxTo(order, myInterval, ttlTimeOut)
             else {
-                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: new Date() })
+                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not available', time: new Date() })
             }
         }, 20000);
     },
@@ -142,6 +142,7 @@ module.exports = {
             };
             order.confirmTxFrom = true;
             order.received = incTx.value;
+            tools.saveDepositToAddr(order);
         } else return;
         order.hashTxFrom = incTx.hashTx;
         order.userAddrFrom = incTx.addrFrom;
@@ -290,7 +291,7 @@ module.exports = {
             if (coins[order.symbolTo].enabled)
                 utils.findTxFrom(order, myInterval, ttlTimeOut)
             else {
-                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not aviable', time: new Date() })
+                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not available', time: new Date() })
             }
         }, 20000);
     },
@@ -304,10 +305,10 @@ module.exports = {
     //  TODO!!!!!
     /*    checkRefundStatus: async function(order) {
             if (coins[order.symbolFrom].canReceive) {
-                //res = await methods.//not avaible runMethod('awaitDeposit', 'check', order)
+                //res = await methods.//not available runMethod('awaitDeposit', 'check', order)
                 if (!res.error) return
                     //  need restart awaitDeposit
-                //res = await methods.//not avaible runMethod('awaitDeposit', 'start', order);
+                //res = await methods.//not available runMethod('awaitDeposit', 'start', order);
                 if (res.error) order.waitDepositProvider = ''
                 else order.waitDepositProvider = res.provider;
             } else order.waitDepositProvider = '';

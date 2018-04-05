@@ -6,25 +6,25 @@ module.exports = {
 
     getNewOrders: async function(res) {
         return Order.find().exec()
-            .catch((err) => { myErrorHandler("getNewOrders tools: " + err, res); })
+            .catch((err) => { myErrorHandler('getNewOrders tools: ' + err, res); })
     },
 
     findOrderID: async function(addr) {
         order = await Order.findOne({ userAddrFrom: addr }).exec()
-            .catch((err) => { return myErrorHandler("getNewOrders tools: " + err, res); })
+            .catch((err) => { return myErrorHandler('getNewOrders tools: ' + err, res); })
         if (order == null) return
         return order.exchangeTxId;
     },
 
     getAOrders: async function(res) {
         return ArhOrder.find().exec()
-            .catch((err) => { myErrorHandler("getArhOrders tools: " + err, res); })
+            .catch((err) => { myErrorHandler('getArhOrders tools: ' + err, res); })
     },
 
     getOrders: async function(res) {
         const orders = await this.getNewOrders(res);
         if (orders == null || orders[0] == null)
-            return myErrorHandler("getOrders tools: orders not found", res);
+            return myErrorHandler('getOrders tools: orders not found', res);
         res.json({
             error: false,
             orders: orders
@@ -33,10 +33,10 @@ module.exports = {
 
     removeOrders: async function(res) {
         const orders = await this.getNewOrders(res);
-        if (orders == null || orders[0] == null) return myErrorHandler("getOrders tools: orders not found", res);
+        if (orders == null || orders[0] == null) return myErrorHandler('getOrders tools: orders not found', res);
         for (order in orders) {
             await orders[order].remove(function(err) {
-                if (err) return myErrorHandler("removeOrders stop save hook " + err);
+                if (err) return myErrorHandler('removeOrders stop save hook ' + err);
             });
         }
         mess('removeOrders', 'all orders removed', res)
@@ -45,7 +45,7 @@ module.exports = {
     getArhOrders: async function(res) {
         const orders = await this.getAOrders(res);
         if (orders == null || orders[0] == null)
-            return myErrorHandler("getArhOrders tools: orders not found", res);
+            return myErrorHandler('getArhOrders tools: orders not found', res);
         res.json({
             error: false,
             orders: orders
@@ -54,11 +54,11 @@ module.exports = {
 
     findOrderByID: function(oid, res) {
         Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-            if (err) return myErrorHandler("getOrderByID exec: " + err, res);
+            if (err) return myErrorHandler('getOrderByID exec: ' + err, res);
             if (order == null) {
                 ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-                    if (err) return myErrorHandler("getOrderByID exec: " + err, res);
-                    if (order == null) return myErrorHandler("order not found", res);
+                    if (err) return myErrorHandler('getOrderByID exec: ' + err, res);
+                    if (order == null) return myErrorHandler('order not found', res);
                     return res.json({ error: false, order: order });
                 });
             } else res.json({ error: false, order: order });
@@ -67,12 +67,12 @@ module.exports = {
 
     findOrderByUserId: function(uid, res) {
         Order.findOne({ userID: uid }).exec(function(err, order) {
-            if (err) return myErrorHandler("findOrderByUserId exec: " + err, res);
+            if (err) return myErrorHandler('findOrderByUserId exec: ' + err, res);
             if (order == null) {
                 ArhOrder.findOne({ userID: uid }).exec(function(err, order) {
                     if (err)
-                        return myErrorHandler("findOrderByUserId exec: " + err, res);
-                    if (order == null) return myErrorHandler("order not found", res);
+                        return myErrorHandler('findOrderByUserId exec: ' + err, res);
+                    if (order == null) return myErrorHandler('order not found', res);
                     res.json({
                         error: false,
                         order: null,
@@ -91,13 +91,13 @@ module.exports = {
     findOrderByAddr: function(addr, res) {
         Order.findOne({ userAddrFrom: addr }).exec(function(err, order) {
             if (err)
-                return myErrorHandler("findOrderByAddr exec1: " + err, res);
+                return myErrorHandler('findOrderByAddr exec1: ' + err, res);
             if (order == null) {
                 Order.findOne({ userAddrTo: addr }).exec(function(err, order) {
                     if (err)
-                        return myErrorHandler("findOrderByAddr exec2: " + err, res);
+                        return myErrorHandler('findOrderByAddr exec2: ' + err, res);
                     if (order == null)
-                    //                    return res.json({ error: true, response: "order not found" });
+                    //                    return res.json({ error: true, response: 'order not found' });
                         return tools.findArhOrderByAddr(addr, res);
                     //  console.log('Order ' + orderID + '  %s', order.status.toString());
                     res.json({ error: false, order: order });
@@ -112,13 +112,13 @@ module.exports = {
     findArhOrderByAddr: function(addr, res) {
         ArhOrder.findOne({ userAddrFrom: addr }).exec(function(err, order) {
             if (err)
-                return myErrorHandler("findOrderByAddr exec1: " + err, res);
+                return myErrorHandler('findOrderByAddr exec1: ' + err, res);
             if (order == null) {
                 ArhOrder.findOne({ userAddrTo: addr }).exec(function(err, order) {
                     if (err)
-                        return myErrorHandler("findOrderByAddr exec2: " + err, res);
+                        return myErrorHandler('findOrderByAddr exec2: ' + err, res);
                     if (order == null)
-                        return res.json({ error: true, response: "order not found" });
+                        return res.json({ error: true, response: 'order not found' });
                     //  console.log('Order ' + orderID + '  %s', order.status.toString());
                     res.json({ error: false, order: order });
                 });
@@ -134,7 +134,7 @@ module.exports = {
             ords = [];
         ords = await Order.find({ userID: uid }).exec()
             .catch((err) => {
-                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+                return myErrorHandler('findOrdersByAddr ' + addr + ' ' + err, res);
             })
         if (ords != null) {
             for (key in ords) {
@@ -145,13 +145,13 @@ module.exports = {
 
         ords = await ArhOrder.find({ userID: uid }).exec()
             .catch((err) => {
-                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+                return myErrorHandler('findOrdersByAddr ' + addr + ' ' + err, res);
             })
         if (ords != null)
             for (key in ords) {
                 orders[orders.length] = Object.assign({}, ords[key]._doc)
             }
-        if (orders == null) return res.json({ error: true, response: "orders not found" });
+        if (orders == null) return res.json({ error: true, response: 'orders not found' });
         res.json({ error: false, orders: orders });
     },
 
@@ -161,18 +161,18 @@ module.exports = {
         var query = Order.find({});
         ords = await query.or([{ userAddrFrom: addr }, { userAddrRefund: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
             .catch((err) => {
-                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+                return myErrorHandler('findOrdersByAddr ' + addr + ' ' + err, res);
             })
         if (ords != null && ords[0] != null)
             for (key in ords) { orders[orders.length] = ords[key]._doc };
         var query = ArhOrder.find({});
         ords = await query.or([{ userAddrFrom: addr }, { userAddrRefund: addr }, { userAddrTo: addr }, { exchangeAddrTo: addr }]).exec()
             .catch((err) => {
-                return myErrorHandler("findOrdersByAddr " + addr + ' ' + err, res);
+                return myErrorHandler('findOrdersByAddr ' + addr + ' ' + err, res);
             })
         if (ords != null && ords[0] != null)
             for (key in ords) { orders[orders.length] = ords[key]._doc }
-        if (orders == null || orders[0] == null) return res.json({ error: true, response: "orders not found" });
+        if (orders == null || orders[0] == null) return res.json({ error: true, response: 'orders not found' });
         res.json({ error: false, orders: orders });
     },
 
@@ -180,7 +180,7 @@ module.exports = {
     setOrderStatusID: function(orderID, status, reason, res) {
         Order.findOne({ exchangeTxId: orderID }).exec(function(err, order) {
             if (err) return myErrorHandler(err, res);
-            if (order == null) return myErrorHandler("order not found", res);
+            if (order == null) return myErrorHandler('order not found', res);
             if (status != undefined) {
                 data = { reason: reason, time: timeNow() }
                 tools.setOrderStatus(order, status, data);
@@ -211,16 +211,16 @@ module.exports = {
 
     deleteOrderByID: function(oid, res) {
         Order.findOneAndRemove({ exchangeTxId: oid }).exec(function(err, order) {
-            if (err) return myErrorHandler("deleteOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not found", res);
+            if (err) return myErrorHandler('deleteOrderBeID exec: ' + err, res);
+            if (order == null) return myErrorHandler('order not found', res);
             res.json({ error: false, response: 'removed' });
         });
     },
 
     arhOrderByID: function(oid, res) {
         Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-            if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not found", res);
+            if (err) return myErrorHandler('findOrderBeID exec: ' + err, res);
+            if (order == null) return myErrorHandler('order not found', res);
             tools.arhOrder(order, res);
         });
     },
@@ -257,7 +257,7 @@ module.exports = {
         order.remove(function(err) {
             if (err) {
                 myErrorHandler(
-                    "arhOrderByID: order " + arhorder.exchangeTxId + " remove, " + err, res);
+                    'arhOrderByID: order ' + arhorder.exchangeTxId + ' remove, ' + err, res);
                 res = undefined
             };
         });
@@ -270,8 +270,8 @@ module.exports = {
 
     deArhOrderByID: function(oid, res) {
         ArhOrder.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-            if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not found", res);
+            if (err) return myErrorHandler('findOrderBeID exec: ' + err, res);
+            if (order == null) return myErrorHandler('order not found', res);
             tools.deArhOrder(order, res);
         });
     },
@@ -309,7 +309,7 @@ module.exports = {
         order.remove(function(err) {
             if (err) {
                 myErrorHandler(
-                    "deArhOrderByID: order " + neworder.exchangeTxId + " remove, " + err, res);
+                    'deArhOrderByID: order ' + neworder.exchangeTxId + ' remove, ' + err, res);
                 res = undefined
             };
         });
@@ -322,8 +322,8 @@ module.exports = {
 
     refundOrderByID: function(oid, res) {
         Order.findOne({ exchangeTxId: oid }).exec(function(err, order) {
-            if (err) return myErrorHandler("findOrderBeID exec: " + err, res);
-            if (order == null) return myErrorHandler("order not found", res);
+            if (err) return myErrorHandler('findOrderBeID exec: ' + err, res);
+            if (order == null) return myErrorHandler('order not found', res);
             utils.makeRefund(order, res);
         });
     },
@@ -335,7 +335,7 @@ module.exports = {
         Tx.findOne({ hashTx: tx.hash })
             .exec(async function(err, existTx) {
                 var oid;
-                if (err) return myErrorHandler("incoming Tx: " + err, res)
+                if (err) return myErrorHandler('incoming Tx: ' + err, res)
                 if (existTx == null) {
                     if (tx.orderID == '') oid = await tools.findOrderID(tx.addrFrom)
                     else oid = tx.orderID;
@@ -367,15 +367,15 @@ module.exports = {
 
     findTxByAddr: async function(addr) {
         tx = await Tx.findOne({ addrFrom: addr }).exec()
-            .catch((err) => { return myErrorHandler("findTxByAddr : " + err) })
+            .catch((err) => { return myErrorHandler('findTxByAddr : ' + err) })
         return tx;
     },
 
 
     getTxs: function(res) {
         Tx.find().exec(function(err, txs) {
-            if (err) return myErrorHandler("getTx exec: " + err, res);
-            if (txs == null) return myErrorHandler("transactions not found", res);
+            if (err) return myErrorHandler('getTx exec: ' + err, res);
+            if (txs == null) return myErrorHandler('transactions not found', res);
             res.json({
                 error: false,
                 txs: txs
@@ -385,11 +385,11 @@ module.exports = {
 
     removeTxs: async function(res) {
         Tx.find().exec(async function(err, txs) {
-            if (err) return myErrorHandler("getTx exec: " + err, res);
-            if (txs == null || txs[0] == null) return myErrorHandler("transactions not found", res);
+            if (err) return myErrorHandler('getTx exec: ' + err, res);
+            if (txs == null || txs[0] == null) return myErrorHandler('transactions not found', res);
             for (tx in txs) {
                 await txs[tx].remove(function(err) {
-                    if (err) return myErrorHandler("removeTxs " + err);
+                    if (err) return myErrorHandler('removeTxs ' + err);
                 });
             };
             mess('removeTxs', 'all txs removed', res)
@@ -400,16 +400,16 @@ module.exports = {
 
     arhTxByID: function(oid, res) {
         Tx.findOne({ orderID: oid }).exec(function(err, tx) {
-            if (err) return myErrorHandler("arhTxByID exec: " + err, res);
-            if (tx == null) return myErrorHandler("transaction not found", res);
+            if (err) return myErrorHandler('arhTxByID exec: ' + err, res);
+            if (tx == null) return myErrorHandler('transaction not found', res);
             tools.arhTx(tx, res);
         });
     },
 
     arhTxByAddr: function(addrs, res) {
         Tx.findOne({ addrFrom: addrs }).exec(function(err, tx) {
-            if (err) return myErrorHandler("arhTxByAddr exec: " + err, res);
-            if (tx == null) return myErrorHandler("transaction not found", res);
+            if (err) return myErrorHandler('arhTxByAddr exec: ' + err, res);
+            if (tx == null) return myErrorHandler('transaction not found', res);
             tools.arhTx(tx, res);
         });
     },
@@ -427,14 +427,14 @@ module.exports = {
         arhtx.save(function(err) {
             if (err)
                 return myErrorHandler(
-                    "arhTx order " + tx.orderID + " save, " + err,
+                    'arhTx order ' + tx.orderID + ' save, ' + err,
                     res
                 );
         });
         tx.remove(function(err) {
             if (err)
                 return myErrorHandler(
-                    "arhTx order " + arhtx.orderID + " remove, " + err,
+                    'arhTx order ' + arhtx.orderID + ' remove, ' + err,
                     res
                 );
         });
@@ -447,30 +447,32 @@ module.exports = {
 
     removeTxByAddrFrom: function(addrs, res) {
         Tx.findOneAndRemove({ addrFrom: addrs }).exec(function(err, tx) {
-            if (err) return myErrorHandler("removeTxByAddrFrom exec: " + err, res);
-            if (tx == null) return myErrorHandler("tx not found", res);
+            if (err) return myErrorHandler('removeTxByAddrFrom exec: ' + err, res);
+            if (tx == null) return myErrorHandler('tx not found', res);
             res.json({ error: false, response: 'removed' });
         });
     },
 
     removeTxByAddrTo: function(addrs, res) {
         Tx.findOneAndRemove({ To: addrs }).exec(function(err, tx) {
-            if (err) return myErrorHandler("removeTxByAddrTo exec: " + err, res);
-            if (tx == null) return myErrorHandler("tx not found", res);
+            if (err) return myErrorHandler('removeTxByAddrTo exec: ' + err, res);
+            if (tx == null) return myErrorHandler('tx not found', res);
             if (res) res.json({ error: false, response: 'removed' });
         });
     },
 
     getAddressTo: async function(coin, uid, res) {
-        if (coin == 'ETHR') coin = 'ETH'
-        var adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
-            return myErrorHandler("getAddrTo: " + err, res)
+        var adr;
+        if (coin == 'ETHR') coin = 'ETH';
+        adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
+            return myErrorHandler('getAddrTo: ' + err, res)
         });
         if (adr == null) {
             adr = await Addrs.findOne({ coin: coin, userId: '', active: true }).exec().catch((err) => {
-                if (adr == null) return myErrorHandler("getAddrTo: " + err, res)
+                return myErrorHandler('getAddrTo: ' + err, res)
             });
         }
+        if (adr == null) return myErrorHandler('getAddrTo ' + coin + ' adresses not available ', res)
         adr.userId = uid;
         if (++adr.counter > 0) adr.active = false;
         adr.save().catch((err) => {
@@ -478,5 +480,16 @@ module.exports = {
         });
         if (res) res.json({ error: false, coin: coin, address: addr, counter: adr.counter });
         return adr.address;
+    },
+
+    saveDepositToAddr: async function(order) {
+        var adr = await Addrs.findOne({ address: order.exchangeAddrTo }).exec().catch((err) => {
+            return myErrorHandler('saveDepositToAddr: ' + err, res)
+        });
+        if (adr == null) return myErrorHandler('saveDepositToAddr ' + coin + ' ' + order.exchangeAddrTo + ' adress not available ', res)
+        adr.balance = adr.balance + order.received;
+        adr.save().catch((err) => {
+            myErrorHandler('saveDepositToAddr address save ' + err)
+        });
     }
 }

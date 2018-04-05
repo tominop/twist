@@ -12,6 +12,7 @@ const AdrSchema = new Schema({
     userId: String,
     orderId: String,
     counter: Number,
+    balance: Number,
     active: Boolean
 });
 
