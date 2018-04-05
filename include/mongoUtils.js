@@ -463,7 +463,6 @@ module.exports = {
 
     getAddressTo: async function(coin, uid, res) {
         var adr;
-        if (coin == 'ETHR') coin = 'ETH';
         adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
             return myErrorHandler('getAddrTo: ' + err, res)
         });
@@ -491,5 +490,54 @@ module.exports = {
         adr.save().catch((err) => {
             myErrorHandler('saveDepositToAddr address save ' + err)
         });
+    },
+
+    getAddressWithBalance: async function(coin, res) {
+        var adrs;
+        adrs = await Addrs.find({ coin: coin, balance: { $gt: 0 } }).exec().catch((err) => {
+            return myErrorHandler('getAddressWithBalance: ' + err, res)
+        });
+        res.json({ error: false, addrs: adrs });
+    },
+
+
+    setAddressWithUser: async function(coin, res) {
+        var adrs;
+        mess('setAddressWithUser', 'load starts', res);
+        adrs = await Addrs.find({ coin: coin, userId: { $ne: '' } }).exec().catch((err) => {
+            return myErrorHandler('setAddressWithUser: ' + err)
+        });
+        for (adr in adrs) {
+
+            var bal = await tools.getBalanceAddr(coin, adrs[adr].address);
+            adrs[adr].balance = bal.data.balance;
+            await adrs[adr].save().catch((err) => {
+                myErrorHandler('setAddressWithUser address save ' + err)
+            });
+        }
+        mess('address', 'load finished');
+    },
+
+    getAddressWithUser: async function(coin, res) {
+        var adrs;
+        adrs = await Addrs.find({ coin: coin, userId: { $gt: "" } }).exec().catch((err) => {
+            return myErrorHandler('getAddressWithUser: ' + err, res)
+        });
+        res.json({ error: false, addrs: adrs });
+    },
+
+    getBalanceAddr: function(coin, addr) {
+        mess('getBalanceAddr', 'coin ' + coin + ' address ' + addr)
+        return axios.get(coins[coin].api + "address/" + addr)
+            .catch((err) => {
+                myErrorHandler(
+                    "getBalanceAddr: service " +
+                    coin +
+                    " API " +
+                    coins[coin].api +
+                    " connection error" +
+                    err
+                );
+            });
     }
 }

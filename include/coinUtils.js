@@ -22,7 +22,7 @@ module.exports = {
                 coins[coin].enabled = false;
                 cb(coin);
             })
-            .catch(err => {
+            .catch((err) => {
                 myErrorHandler(
                     "getBalance: service " +
                     coins[coin].symbol +
@@ -75,7 +75,7 @@ module.exports = {
                 coins[coin].price = 0;
                 cb(coin);
             })
-            .catch(err => {
+            .catch((err) => {
                 coins[coin].price = 0;
                 myErrorHandler(
                     "getPrice: price service API " +

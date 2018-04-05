@@ -127,3 +127,27 @@ app.get("/twist/refundorder/:orderID", function(req, res) {
         return myErrorHandler("arhorder: invalid order ID", res);
     tools.refundOrderByID(req.params.orderID, res);
 });
+
+//  getAddressWithBalance route
+app.get("/twist/addrbalance/:coin", function(req, res) {
+    const coin = req.params.coin;
+    if (invalidSymbolAddr(coin))
+        return myErrorHandler("getOrdersByAddr: invalid address", res);
+    tools.getAddressWithBalance(coin, res);
+});
+
+//  getAddressWithUser route
+app.get("/twist/addruser/:coin", function(req, res) {
+    const coin = req.params.coin;
+    if (invalidSymbolAddr(coin))
+        return myErrorHandler("getAddressWithUser: invalid address", res);
+    tools.getAddressWithUser(coin, res);
+});
+
+//  getAddressWithUser route
+app.get("/twist/setaddruser/:coin", function(req, res) {
+    const coin = req.params.coin;
+    if (invalidSymbolAddr(coin))
+        return myErrorHandler("getAddressWithUser: invalid address", res);
+    tools.setAddressWithUser(coin, res);
+});
