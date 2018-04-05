@@ -13,6 +13,8 @@ const OrderSchema = new Schema({
     status: Object,
     exchangeRatio: Number,
     userID: String,
+    userEmail: String,
+    userPhone: String,
     userAddrFrom: String,
     symbolFrom: String,
     valueFrom: Number,

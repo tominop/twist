@@ -12,6 +12,8 @@ module.exports = {
         if (!utils.validateUser(data.userID, res)) return;
         if (!utils.validateCoins(data.symbolFrom, data.valueFrom, data.symbolTo, data.valueTo, res)) return;
         const userID = data.userID,
+            userEmail = data.userEmail || '',
+            userPhone = data.userPhone || '',
             userAddrRefund = utils.normalizeAddr(data.symbolFrom, data.userAddrRefund),
             symbolFrom = data.symbolFrom,
             valueFrom = valueToFix(data.valueFrom),
@@ -29,6 +31,8 @@ module.exports = {
             status: { code: 0, human: twist.humans[0], data: { time: new Date() } },
             exchangeRatio: ratio,
             userID: userID,
+            userEmail: userEmail,
+            userPhone: userPhone,
             userAddrFrom: '',
             symbolFrom: symbolFrom,
             valueFrom: valueFrom,
@@ -141,12 +145,12 @@ module.exports = {
             };
             order.confirmTxFrom = true;
             order.received = incTx.value;
-            tools.saveDepositToAddr(order);
         } else return;
         order.hashTxFrom = incTx.hashTx;
         order.userAddrFrom = incTx.addrFrom;
         tools.saveOrder(order, 'findTxTo');
         if (order.status.code == 3) {
+            tools.saveDepositToAddr(order);
             clearTimeout(timeout);
             clearInterval(interval);
             utils.stopDepositWait(order);
@@ -221,38 +225,6 @@ module.exports = {
                 };
                 tools.incomingTx(tx);
                 utils.startRefundWait(order);
-
-                /*                axios
-                                    .get(coins[order.symbolTo].api + 'waitTx/' + outTx.data.hash)
-                                    .then(function(h) {
-                                        mess('makeRefund',
-                                            ' exec order ' +
-                                            order.exchangeTxId +
-                                            ': ' +
-                                            coins[order.symbolTo].symbol +
-                                            ' Tx confirmed in block ' +
-                                            h.data.block
-                                        );
-                                        order.status = {
-                                            code: 6,
-                                            human: twist.humans[6],
-                                            data: { archived: true, time: new Date() }
-                                        };
-                                        order.confirmTxTo = true;
-                                        order.sent = valueFact;
-                                        tools.arhOrder(order);
-                                        mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
-                                    })
-                                    .catch((err) => {
-                                        myErrorHandler(
-                                            'makeRefund: exec order ' +
-                                            order.exchangeTxId +
-                                            ' Tx to ' +
-                                            order.exchangeAddrTo +
-                                            ' not confirmed, ' +
-                                            err
-                                        );
-                                    }); */
             })
             .catch((err) => {
                 myErrorHandler(
@@ -300,19 +272,6 @@ module.exports = {
         methods.awaitRefund(order, 'stop')
     },
 
-
-    //  TODO!!!!!
-    /*    checkRefundStatus: async function(order) {
-            if (coins[order.symbolFrom].canReceive) {
-                //res = await methods.//not available runMethod('awaitDeposit', 'check', order)
-                if (!res.error) return
-                    //  need restart awaitDeposit
-                //res = await methods.//not available runMethod('awaitDeposit', 'start', order);
-                if (res.error) order.waitDepositProvider = ''
-                else order.waitDepositProvider = res.provider;
-            } else order.waitDepositProvider = '';
-            tools.saveOrder(order, 'checkRefundStatus');
-        }, */
 
     findTxFrom: async function(order, interval, timeout) {
         if (order.hashTxTo == '') {
