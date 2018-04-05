@@ -448,6 +448,7 @@ module.exports = {
             //        makeChange(changeOrder, change - minerFee);
             //  !!!!TODO - возможно новый статус ордера
             mess('makeRefund', 'twist must send change ' + change + order.symbolFrom + ' to user');
+            order.valueRefund = change;
         };
         return valueFact;
     }
