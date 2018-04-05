@@ -18,8 +18,8 @@ module.exports = {
             userAddrTo = utils.normalizeAddr(data.symbolTo, data.userAddrTo),
             symbolTo = data.symbolTo,
             valueTofromUser = valueToFix(data.valueTo);
-        const ratio = valueToFix(coins[symbolTo].price / coins[symbolFrom].price);
-        const valueTo = valueToFix(valueFrom / ratio);
+        const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
+        const valueTo = valueToFix(valueFrom * ratio);
         const time = new Date().getTime();
         const addrTo = await tools.getAddressTo(symbolFrom, userID);
         var order = new Order({
@@ -437,7 +437,7 @@ module.exports = {
 
     calcValueFact: function(order) {
         var change, valueFact;
-        valueFact = valueToFix(order.received / order.exchangeRatio);
+        valueFact = valueToFix(order.received * order.exchangeRatio);
         change = valueToFix(
             order.received - twist.maxLimit / coins[order.symbolFrom].price
         );
