@@ -231,7 +231,7 @@ module.exports = {
                     'exec order ' +
                     order.exchangeTxId +
                     ': Tx to ' +
-                    order.exchangeAddrTo +
+                    order.userAddrTo +
                     ' not created, ' +
                     err, res
                 );
