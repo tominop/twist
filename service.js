@@ -13,14 +13,13 @@ const express = require("express"),
 //  Set global variable app (for use in routes)
 app = express();
 
-//  Load global parameters and functions 
-require('./include/globals');
+global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations;
 
 twist.mode = process.env.MODE || 'development'
 
 //  Configure mongoDB
 const configDbFile = process.env.DB || twist.mode == 'development' ? './private/db' : './db';
-const dbConfig = require(configDbFile),
+dbConfig = require(configDbFile),
     mongoose = require('mongoose');
 
 mongoose.connection.on("open", function(ref) {
@@ -64,6 +63,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
     extended: true
 }));
+
+//  Load global parameters and functions 
+require('./include/globals');
 
 //  JWT token functions
 app.use(expressJwt({ secret: dbConfig.psw }), function(req, res, next) {

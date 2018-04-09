@@ -4,7 +4,6 @@
 
 global.axios = require('axios'); //  AXIOS - compact lib for HttpRequest
 //global.api = require("./twist_api"); //  microservices url
-global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations;
 global.coins = require(twist.mode == 'development' ? '../private/coins' : './coins');
 axios.defaults.headers.common['Authorization'] = 'Bearer ' + dbConfig.token;
 
