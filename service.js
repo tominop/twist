@@ -69,8 +69,6 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
 app.use(expressJwt({ secret: dbConfig.psw }), function(req, res, next) {
     var arr = req.user.user.split('@');
     if (arr[1] != 'youdex') return res.sendStatus(401);
-    var token = jwt.sign({ user: arr[0] }, dbConfig.secret)
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
     next();
 });
 

@@ -6,10 +6,9 @@ global.axios = require('axios'); //  AXIOS - compact lib for HttpRequest
 //global.api = require("./twist_api"); //  microservices url
 global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations;
 global.coins = require(twist.mode == 'development' ? '../private/coins' : './coins');
-
+axios.defaults.headers.common['Authorization'] = 'Bearer ' + dbConfig.token;
 
 //  global functions
-
 global.mess = function(name, message, res) {
     if (res) res.json({ error: false, response: message });
     console.log(timeNow() + name + ': ' + message);
