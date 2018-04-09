@@ -6,7 +6,9 @@
  */
 
 const express = require("express"),
-    bodyParser = require("body-parser");
+    bodyParser = require("body-parser"),
+    expressJwt = require('express-jwt'),
+    jwt = require('jsonwebtoken');
 
 //  Set global variable app (for use in routes)
 app = express();
@@ -62,8 +64,17 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
     extended: true
 }));
-//  Load routes (shema without express.router)
 
+//  JWT token functions
+app.use(expressJwt({ secret: dbConfig.psw }), function(req, res, next) {
+    var arr = req.user.user.split('@');
+    if (arr[1] != 'youdex') return res.sendStatus(401);
+    var token = jwt.sign({ user: arr[0] }, dbConfig.secret)
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+    next();
+});
+
+//  Load routes (shema without express.router)
 require('./routes/coin');
 require('./routes/order');
 require('./routes/tx');
@@ -72,6 +83,16 @@ require('./routes/errorHandler');
 
 //  Load main functions and start service
 engine = require('./include/engine');
+
+// catch 404 and forward to error handler
+app.use(function(req, res) {
+    myErrorHandler(req.url + " route not support", res);
+});
+
+app.use(function(err, req, res, next) {
+    myErrorHandler('twist api service: ' + err, res);
+});
+
 
 const port = process.env.PORT_TWIST || 8900;
 twist.url = twist.url + ':' + port.toString();
