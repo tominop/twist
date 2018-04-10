@@ -8,7 +8,7 @@
 //  local variables and function for order.js routes of twist exchange
 module.exports = {
 
-    newOrder: async function(data, res) {
+    newOrder: async function(exchange, data, res) {
         if (!utils.validateUser(data.userID, res)) return;
         if (!utils.validateCoins(data.symbolFrom, data.valueFrom, data.symbolTo, data.valueTo, res)) return;
         const userID = data.userID,
@@ -23,9 +23,10 @@ module.exports = {
         const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
         const valueTo = valueToFix(valueFrom * ratio);
         const time = new Date().getTime();
-        const addrTo = await tools.getAddressTo(symbolFrom, userID);
+        const addrTo = await tools.getAddressTo(symbolFrom, userID, exchange);
         var order = new Order({
             exchangeTxId: time.toString(),
+            exchange: exchange,
             createDateUTC: time,
             ttl: twist.ttl,
             status: { code: 0, human: twist.humans[0], data: { time: new Date() } },

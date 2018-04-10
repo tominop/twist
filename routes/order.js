@@ -24,7 +24,8 @@ app.post("/twist/neworder", function(req, res) {
         return myErrorHandler("neworder: invalid user Address To", res);
     if (invalidValue(req.body.symbolFrom, req.body.valueFrom))
         return myErrorHandler("neworder: invalid user valueFrom ", res);
-    utils.newOrder(req.body, res);
+    var arr = req.user.user.split('@');
+    utils.newOrder(arr[0], req.body, res);
 });
 
 //  service routes

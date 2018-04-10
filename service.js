@@ -13,7 +13,7 @@ const express = require("express"),
 //  Set global variable app (for use in routes)
 app = express();
 
-global.twist = require("./twist"); //  exchange parameters: symbols, ttl, numConfirmations;
+global.twist = require("./include/twist"); //  exchange parameters: symbols, ttl, numConfirmations;
 
 twist.mode = process.env.MODE || 'development'
 
@@ -68,7 +68,7 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
 require('./include/globals');
 
 //  JWT token functions
-app.use(expressJwt({ secret: dbConfig.psw }), function(req, res, next) {
+app.use(expressJwt({ secret: dbConfig.secret }), function(req, res, next) {
     var arr = req.user.user.split('@');
     if (arr[1] != 'youdex') return res.sendStatus(401);
     next();

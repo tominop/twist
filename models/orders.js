@@ -8,6 +8,7 @@ const Schema = mongoose.Schema;
 
 const OrderSchema = new Schema({
     exchangeTxId: String,
+    exchange: String,
     createDateUTC: Number,
     ttl: Number,
     status: Object,
