@@ -23,7 +23,7 @@ module.exports = {
         const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
         const valueTo = valueToFix(valueFrom * ratio);
         const time = new Date().getTime();
-        const addrTo = await tools.getAddressTo(symbolFrom, userID, exchange);
+        const addrTo = await tools.getAddressTo(symbolFrom, userID);
         var order = new Order({
             exchangeTxId: time.toString(),
             exchange: exchange,
