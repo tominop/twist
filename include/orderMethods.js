@@ -7,7 +7,7 @@
 
 module.exports = {
 
-    awaitDeposit: async function(order, action) {
+    awaitDeposit: async (order, action) => {
         mess('awaitDeposit', action + 'ing now for odrer id ' + order.exchangeTxId + ', coin ' + order.symbolFrom);
         var data = {
             addrs: order.exchangeAddrTo
@@ -17,15 +17,16 @@ module.exports = {
             data.url = twist.url + '/twist/incomingtx';
             data.hash = ''
         };
-        return axios.post(
-                coins[order.symbolFrom].api + action + 'WaitTx', data)
-            .catch((err) => {
+        var resp = await axios.post(coins[order.symbolFrom].api + action + 'WaitTx', data)
+            .catch(err => {
                 myErrorHandler('awaitDeposit ' + action + 'ing for order id ' +
                     order.exchangeTxId + ', coin ' + order.symbolFrom + ' ' + err);
             });
+        if (!resp || resp == null || resp.error == true) return false;
+        return true;
     },
 
-    refund: async function(action, order, summ) {
+    refund: async function (action, order, summ) {
         var data;
         mess('refund', action + 'ing now for order' + order.exchangeTxId + ' coin ' + coins[order.symbolFrom]);
         if (action == 'send') {
@@ -40,18 +41,18 @@ module.exports = {
         return axios.post(
             coins[order.symbolFrom].api + action +
             'TxAddrs', data).catch((err) => {
-            myErrorHandler(
-                'awaitDeposit: exec order ' +
-                order.exchangeTxId +
-                ' service ' +
-                order.symbolFrom +
-                err
-            );
-        });
+                myErrorHandler(
+                    'awaitDeposit: exec order ' +
+                    order.exchangeTxId +
+                    ' service ' +
+                    order.symbolFrom +
+                    err
+                );
+            });
     },
 
-    awaitRefund: async function(order, action) {
-        mess('awaitRefund', action + 'ing now for odrer id ' + order.exchangeTxId + ', coin ' + order.symbolTo);
+    awaitWithdraw: async function (order, action) {
+        mess('awaitWithdraw', action + 'ing now for odrer id ' + order.exchangeTxId + ', coin ' + order.symbolTo);
         var data = {
             addrs: order.userAddrTo
         };
@@ -61,14 +62,14 @@ module.exports = {
             data.hash = order.hashTxTo
         };
         return axios.post(
-                coins[order.symbolTo].api + action + 'WaitTx', data)
+            coins[order.symbolTo].api + action + 'WaitTx', data)
             .catch((err) => {
-                myErrorHandler('awaitRefund ' + action + 'ing for order id ' +
+                myErrorHandler('awaitWithdraw ' + action + 'ing for order id ' +
                     order.exchangeTxId + ', coin ' + order.symbolTo + ' ' + err);
             });
     },
 
-    getAddressTo: async(symbolFrom, exchange, attrib, userId, orderId) => {
+    getAddressTo: async (symbolFrom, exchange, attrib, userId, orderId) => {
         var data = {
             exchange: exchange,
             attrib: attrib,
@@ -82,7 +83,7 @@ module.exports = {
             });
     },
 
-    getAddressFrom: async(symbolTo, exchange) => {
+    getAddressFrom: async (symbolTo, exchange) => {
         return axios.get(coins[symbolTo].api + 'addrfrom/' + exchange)
             .catch(err => {
                 myErrorHandler('getAddressFrom for exchange ' +

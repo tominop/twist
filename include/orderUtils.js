@@ -8,104 +8,7 @@
 //  local variables and function for order.js routes of twist exchange
 module.exports = {
 
-    newOrder: async function(exchange, data, res) {
-        if (!utils.validateUser(data.userID, res)) return;
-        if (!utils.validateCoins(data.symbolFrom, data.valueFrom, data.symbolTo, data.valueTo, res)) return;
-        const userID = data.userID,
-            userEmail = data.userEmail || '',
-            userPhone = data.userPhone || '',
-            userAddrRefund = utils.normalizeAddr(data.symbolFrom, data.userAddrRefund),
-            symbolFrom = data.symbolFrom,
-            valueFrom = valueToFix(data.valueFrom),
-            userAddrTo = utils.normalizeAddr(data.symbolTo, data.userAddrTo),
-            symbolTo = data.symbolTo,
-            valueTofromUser = valueToFix(data.valueTo);
-        const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
-        const valueTo = valueToFix(valueFrom * ratio);
-        const time = new Date().getTime();
-        var resp = await methods.getAddressTo(symbolFrom, exchange, 0, userID, time.toString()); //  deposit to address
-        if (resp == null || resp.data.error) return myErrorHandler('newOrder, new addrTo generation fail')
-        const addrTo = resp.data.address;
-        // !!!TODO        resp = await methods.getAddressFrom(symbolTo, exchange); //  withdrawal form address
-        //        if (resp == null || resp.data.error) return myErrorHandler('newOrder, get exchangeAddrFrom fail')
-        //        const addrFrom = resp.data.address;
-        var order = new Order({
-            exchangeTxId: time.toString(),
-            exchange: exchange,
-            createDateUTC: time,
-            ttl: twist.ttl,
-            status: { code: 0, human: twist.humans[0], data: { time: new Date() } },
-            exchangeRatio: ratio,
-            userID: userID,
-            userEmail: userEmail,
-            userPhone: userPhone,
-            userAddrFrom: '',
-            symbolFrom: symbolFrom,
-            valueFrom: valueFrom,
-            hashTxFrom: '',
-            confirmTxFrom: false,
-            userAddrRefund: userAddrRefund,
-            valueRefund: 0,
-            hashTxRefund: '',
-            confirmTxRefund: false,
-            userAddrTo: userAddrTo,
-            symbolTo: symbolTo,
-            valueTo: valueTo,
-            hashTxTo: '',
-            confirmTxTo: false,
-            exchangeAddrTo: addrTo,
-            exchangeAddrFrom: coins[order.symbolFrom].walletFrom, //..!!!TODO addrFrom,
-            symbol: symbolFrom,
-            amount: valueFrom,
-            received: 0.0,
-            sent: 0.0
-        });
-        order.save(function(err) {
-            if (err)
-                return myErrorHandler(
-                    'newOrder: order ID ' + order.exchangeTxId + ' save1 ' + err,
-                    res
-                );
-            // Order is saved to DB and added to executed orders array
-            coins[symbolTo].reserv = coins[symbolTo].reserv + valueTo;
-            execOrders[execOrders.length] = { id: order.exchangeTxId, time: new Date(), status: 0 }
-            exec.takeOrder(order);
-            res.json({
-                error: false,
-                order: order
-            });
-        });
-    },
-
-    startDepositWait: function(order) {
-        mess('startDepositWait', 'order id ' +
-            order.exchangeTxId +
-            ' awaiting deposit starts now');
-        var myInterval;
-        //  awaiting deposit timer
-        var ttlTimeOut = setTimeout(function() {
-            clearInterval(myInterval);
-            utils.stopDepositWait(order);
-            myErrorHandler('startDepositWait: order id ' +
-                order.exchangeTxId +
-                ' deposit to ' +
-                order.exchangeAddrTo +
-                ' not received in order ttl period'
-            );
-            tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: new Date() })
-            tools.arhOrder(order);
-        }, order.ttl * 60000);
-        //  checking incoming tx timer
-        myInterval = setInterval(function() {
-            if (coins[order.symbolFrom].canReceive)
-                utils.findTxTo(order, myInterval, ttlTimeOut)
-            else {
-                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not available', time: new Date() })
-            }
-        }, 20000);
-    },
-
-    findTxTo: async function(order, interval, timeout) {
+    findTxTo: async function (order, interval, timeout) {
         var depositIsFind = false;
         if (order.hashTxFrom == '') {
             incTx = await Tx.findOne({ To: order.exchangeAddrTo }).exec()
@@ -166,12 +69,12 @@ module.exports = {
                 order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirmed '
             );
-            return utils.makeRefund(order);
+            return utils.makeWithdraw(order);
         };
         if (!depositIsFind) {
             depositIsFind = true;
             clearTimeout(timeout);
-            timeout = setTimeout(function() {
+            timeout = setTimeout(function () {
                 clearInterval(interval);
                 utils.stopDepositWait(order);
                 myErrorHandler(
@@ -187,15 +90,11 @@ module.exports = {
         };
     },
 
-    stopDepositWait: function(order) {
-        methods.awaitDeposit(order, 'stop');
-    },
-
     /// TODO !!!
-    makeRefund: function(order, res) {
+    makeWithdraw: function (order, res) {
         if (order.symbolTo.substr(0, 2) == 'ET' && (order.userAddrTo.substr(0, 2) != '0x')) order.userAddrTo = '0x' + order.userAddrTo;
         const valueFact = utils.calcValueFact(order)
-        mess('makeRefund', 'order ' +
+        mess('makeWithdraw', 'order ' +
             order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
         var jsonData = JSON.stringify({
@@ -205,7 +104,7 @@ module.exports = {
             value: valueFact
         });
         axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
-            .then(async function(outTx) {
+            .then(async function (outTx) {
                 if (outTx != null && outTx.data.hash != null) {
                     order.status = {
                         code: 4,
@@ -214,13 +113,13 @@ module.exports = {
                     };
                     order.hashTxTo = outTx.data.hash;
                     if (res) res.json({ error: false, hash: outTx.data.hash });
-                    order.save(function(err) {
+                    order.save(function (err) {
                         if (err) return myErrorHandler(
                             'makeTxTo: exec order ' +
                             order.exchangeTxId +
                             ' save, ' + err);
                     });
-                    mess('makeRefund', ' exec order ' + order.exchangeTxId +
+                    mess('makeWithdraw', ' exec order ' + order.exchangeTxId +
                         ': to user Tx hash ' + order.hashTxTo);
                     //  !!!TODO correct awat Tx to user
                     var tx = {
@@ -233,7 +132,7 @@ module.exports = {
                         To: order.userAddrTo
                     };
                     tools.incomingTx(tx);
-                    utils.startRefundWait(order);
+                    utils.startWithdrawWait(order);
                 } else {
                     myErrorHandler('exec order ' + order.exchangeTxId +
                         ': Tx to ' + order.userAddrTo + ' not created!', res);
@@ -246,42 +145,7 @@ module.exports = {
             });
     },
 
-    //  TODO!!!!!
-    startRefundWait: async function(order) {
-        resp = await methods.awaitRefund(order, 'start');
-        if (!resp || resp.error) return;
-        mess('waitRefund', 'order ' +
-            order.exchangeTxId +
-            ' : awaiting refund confirmation starts');
-        var myInterval;
-        var ttlTimeOut = setTimeout(function() {
-            clearInterval(myInterval);
-            utils.stopRefundWait(order);
-            myErrorHandler(
-                'waitRefund: order ' +
-                order.exchangeTxId +
-                ' refund to ' +
-                order.userAddrTo +
-                ' not confirmed in confirmation period'
-            );
-            tools.setOrderStatus(order, 7, { code: 4, reason: 'refund not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: new Date() })
-        }, twist.waitConfirmPeriod * 60000);
-        myInterval = setInterval(function() {
-            if (coins[order.symbolTo].enabled)
-                utils.findTxFrom(order, myInterval, ttlTimeOut)
-            else {
-                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not available', time: new Date() })
-            }
-        }, 20000);
-    },
-
-
-    stopRefundWait: function(order) {
-        methods.awaitRefund(order, 'stop')
-    },
-
-
-    findTxFrom: async function(order, interval, timeout) {
+    findTxFrom: async function (order, interval, timeout) {
         if (order.hashTxTo == '') {
             outTx = await Tx.findOne({ To: order.userAddrTo }).exec()
                 .catch((err) => {
@@ -332,7 +196,7 @@ module.exports = {
         if (order.confirmTxTo) {
             clearTimeout(timeout);
             clearInterval(interval);
-            utils.stopRefundWait(order);
+            utils.stopWithdrawWait(order);
             mess('findTxFrom', 'exec order ' +
                 order.exchangeTxId + ' Tx ' +
                 outTx.hashTx + ' confirmed '
@@ -344,12 +208,12 @@ module.exports = {
             });
             tools.arhTx(outTx);
             tools.arhOrder(order);
-            mess('makeRefund', 'exec order ' + order.exchangeTxId + ' finished successfully!');
+            mess('makeWithdraw', 'exec order ' + order.exchangeTxId + ' finished successfully!');
             return;
         };
     },
 
-    validateCoins: function(symbolFrom, valueFrom, symbolTo, valueTo, res) {
+    validateCoins: function (symbolFrom, valueFrom, symbolTo, valueTo, res) {
         if (coins[symbolFrom].testnet != coins[symbolTo].testnet)
             return myErrorHandler('newOrder: twist can not exchange real coins for testnet coins', res);
         if (!coins[symbolFrom].canReceive)
@@ -374,15 +238,15 @@ module.exports = {
         return true;
     },
 
-    validateUser: async function(userID, res) {
-        return await Order.findOne({ userID: userID }).exec(async function(err, order) {
+    validateUser: async function (userID, res) {
+        return await Order.findOne({ userID: userID }).exec(async function (err, order) {
             if (err) return myErrorHandler('validateUser order.findOne  ' + err, res);
             if (order != null) return myErrorHandler('newOrder: user have executed order ID ' + order.exchangeTxId, res);
             return true;
         });
     },
 
-    normalizeAddr: function(coin, address) {
+    normalizeAddr: function (coin, address) {
         if (coin.substr(0, 2) != 'ET') return address;
         address = address.toLowerCase();
         if (address.substr(0, 2) != '0x') address = '0x' + address;
@@ -390,19 +254,19 @@ module.exports = {
     },
 
     //  find orderId in array of executed orders
-    orderToInd: function(oid) {
+    orderToInd: function (oid) {
         for (ind = 0; ind < execOrders.length; ind++) {
             if (execOrders[ind].id == oid) return ind;
         };
         return -1;
     },
 
-    rmOrderFromArray: function(oid) {
+    rmOrderFromArray: function (oid) {
         var ind = this.orderToInd(oid);
         if (ind > -1) execOrders.splice(ind, 1)
     },
 
-    calcValueFact: function(order) {
+    calcValueFact: function (order) {
         var change, valueFact;
         valueFact = valueToFix(order.received * order.exchangeRatio);
         change = valueToFix(
@@ -414,7 +278,7 @@ module.exports = {
             //        var changeOrder = new Order();
             //        makeChange(changeOrder, change - minerFee);
             //  !!!!TODO - возможно новый статус ордера
-            mess('makeRefund', 'twist must send change ' + change + order.symbolFrom + ' to user');
+            mess('makeWithdraw', 'twist must send change ' + change + order.symbolFrom + ' to user');
             order.valueRefund = change;
         };
         return valueFact;

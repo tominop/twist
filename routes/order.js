@@ -9,7 +9,7 @@ execOrders = []; //  array of executed orders
 
 //  global functions
 methods = require("../include/orderMethods");
-tools = require("../include/mongoUtils");
+tools = require("../include/mongoTools");
 exec = require("../include/orderExec");
 utils = require("../include/orderUtils");
 
@@ -24,7 +24,7 @@ app.post("/twist/neworder", function(req, res) {
         return myErrorHandler("neworder: invalid user Address To", res);
     if (invalidValue(req.body.symbolFrom, req.body.valueFrom))
         return myErrorHandler("neworder: invalid user valueFrom ", res);
-    utils.newOrder(req.user.user.split('@')[0], req.body, res);
+    exec.newOrder(req.user.user.split('@')[0], req.body, res);
 });
 
 //  newAddresTo() route  //  create new order and start exchange

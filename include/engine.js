@@ -68,13 +68,48 @@ module.exports = {
             order = orders[key];
             if (order.status.code == 0) exec.takeOrder(order);
             else if (order.status.code == 1 || order.status.code == 2)
-                exec.checkDepositStatus(order);
-            else if (order.status.code == 3) utils.makeRefund(order);
+                this.checkDepositStatus(order);
+            else if (order.status.code == 3) exec.makeWithdrawTx(order);
             else if (order.status.code == 4)
-                exec.checkRefundStatus1(order);
+                this.checkRefundStatus1(order);
             else if (order.status.code == 5)
-                exec.checkRefundStatus1(order);
+                this.checkRefundStatus1(order);
             else if (order.status.code > 5) tools.arhOrder(order);
         };
-    }
+    },
+
+    checkDepositStatus: async function (order) { //  no deposit found before service restart
+        var ind = utils.orderToInd(order.exchangeTxId);
+        if (ind < 0) {
+            var existTx = await tools.findTxByAddr(order.exchangeAddrTo);
+            if (existTx == null) return exec.takeOrder(order);
+            return utils.startDepositWait(order);
+        }
+        if (coins[order.symbolFrom].canReceive) {
+            return; //!!!TODO - check time!!! and hook
+            resp = await methods.awaitDeposit(order, 'check')
+            if (resp && !resp.error) return
+            //  need restart awaitDeposit
+            resp = await methods.awaitDeposit(order, 'start');
+            if (resp.error) { } else { };
+        }
+        //        tools.saveOrder(order, 'checkDepositStatus'); 
+    },
+
+    checkDepositStatus2: async function (order) {
+        var ind = utils.orderToInd(order.exchangeTxId);
+        if (ind < 0) return utils.startDepositWait(order);
+        return;
+        //  !!!TODO check time and hook
+        if (coins[order.symbolFrom].canReceive) {
+            resp = await methods.awaitDeposit('check', order)
+            if (!resp.error) return
+            //  need restart awaitDeposit
+            resp = await methods.awaitDeposit('start', order);
+        };
+        tools.saveOrder(order, 'checkDepositStatus');
+    },
+
+
+
 };
