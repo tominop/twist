@@ -24,11 +24,18 @@ app.post("/twist/neworder", function(req, res) {
         return myErrorHandler("neworder: invalid user Address To", res);
     if (invalidValue(req.body.symbolFrom, req.body.valueFrom))
         return myErrorHandler("neworder: invalid user valueFrom ", res);
-    var arr = req.user.user.split('@');
-    utils.newOrder(arr[0], req.body, res);
+    utils.newOrder(req.user.user.split('@')[0], req.body, res);
+});
+
+//  newAddresTo() route  //  create new order and start exchange
+app.post("/twist/newaddress", async(req, res) => {
+    const resp = await methods.getAddressTo(req.body.coin, req.user.user.split('@')[0], 0, req.body.userId, req.body.orderId);
+    if (resp == null) return myErrorHandler("newaddress new adrress generation fail", res);
+    res.json(resp.data);
 });
 
 //  service routes
+
 
 //  start engine route
 app.get("/twist/startengine", function(req, res) {

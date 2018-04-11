@@ -51,6 +51,7 @@ module.exports = {
                 coins[coin].minerFee = 0;
                 coins[coin].price = 0;
                 //  !!!TODO        coins[coin].reserv = 0;
+                // await Coin.getCoinBase(coin),
                 Coin.getPrice(coin, twist.priceBase);
                 Coin.getBalance(coin);
                 Coin.getReserv(coin);

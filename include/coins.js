@@ -23,24 +23,24 @@ module.exports = {
         walletFrom: 'a1', // name of Twist account used for transfer BTC to user
         exchangeFee: 0
     },
-        ETH: {
-            symbol: 'ETH',
-            api: "http://localhost:9000/",
-            confirmations: 1,
-            canReceive: false,
-            addressTo: ['0xb5Da165Ec5526FeE516D0c39B8CA77a90b3F44AC'], //  to receave ETH from user (the same as bob account)
-            canSend: true,
-            walletFrom: 'b1', // from transfer ETH to user
-            exchangeFee: 0
-        },
-        YODA: {
-            symbol: 'YODA',
-            api: "http://localhost:9000/",
-            confirmations: 1,
-            canReceive: false,
-            addressTo: ['0xb5Da165Ec5526FeE516D0c39B8CA77a90b3F44AC'], //  YODA (Ethereum) account for receive YODA from user
-            canSend: false,
-            walletFrom: 'c1', // name of Twist account used for transfer Tx to smart contract
-            exchangeFee: 0
-        }
+    ETH: {
+        symbol: 'ETH',
+        api: "http://localhost:9000/",
+        confirmations: 1,
+        canReceive: false,
+        addressTo: ['0xb5Da165Ec5526FeE516D0c39B8CA77a90b3F44AC'], //  to receave ETH from user (the same as bob account)
+        canSend: true,
+        walletFrom: 'b1', // from transfer ETH to user
+        exchangeFee: 0
+    },
+    YODA: {
+        symbol: 'YODA',
+        api: "http://localhost:9000/",
+        confirmations: 1,
+        canReceive: false,
+        addressTo: ['0xb5Da165Ec5526FeE516D0c39B8CA77a90b3F44AC'], //  YODA (Ethereum) account for receive YODA from user
+        canSend: false,
+        walletFrom: 'c1', // name of Twist account used for transfer Tx to smart contract
+        exchangeFee: 0
     }
+}

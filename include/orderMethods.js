@@ -68,4 +68,26 @@ module.exports = {
             });
     },
 
+    getAddressTo: async(symbolFrom, exchange, attrib, userId, orderId) => {
+        var data = {
+            exchange: exchange,
+            attrib: attrib,
+            userId: userId,
+            orderId: orderId
+        };
+        return axios.post(coins[symbolFrom].api + 'newaddrgen', data)
+            .catch(err => {
+                myErrorHandler('getAddressTo order ' +
+                    orderId + ', coin ' + symbolFrom + ' new address generation fail ' + err);
+            });
+    },
+
+    getAddressFrom: async(symbolTo, exchange) => {
+        return axios.get(coins[symbolTo].api + 'addrfrom/' + exchange)
+            .catch(err => {
+                myErrorHandler('getAddressFrom for exchange ' +
+                    exchange + ', coin ' + symbolFrom + ' fail ' + err);
+            });
+    }
+
 }

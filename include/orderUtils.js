@@ -23,7 +23,12 @@ module.exports = {
         const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
         const valueTo = valueToFix(valueFrom * ratio);
         const time = new Date().getTime();
-        const addrTo = await tools.getAddressTo(symbolFrom, userID);
+        var resp = await methods.getAddressTo(symbolFrom, exchange, 0, userID, time.toString()); //  deposit to address
+        if (resp == null || resp.data.error) return myErrorHandler('newOrder, new addrTo generation fail')
+        const addrTo = resp.data.address;
+        // !!!TODO        resp = await methods.getAddressFrom(symbolTo, exchange); //  withdrawal form address
+        //        if (resp == null || resp.data.error) return myErrorHandler('newOrder, get exchangeAddrFrom fail')
+        //        const addrFrom = resp.data.address;
         var order = new Order({
             exchangeTxId: time.toString(),
             exchange: exchange,
@@ -49,6 +54,7 @@ module.exports = {
             hashTxTo: '',
             confirmTxTo: false,
             exchangeAddrTo: addrTo,
+            exchangeAddrFrom: coins[order.symbolFrom].walletFrom, //..!!!TODO addrFrom,
             symbol: symbolFrom,
             amount: valueFrom,
             received: 0.0,
@@ -193,49 +199,50 @@ module.exports = {
             order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
         var jsonData = JSON.stringify({
-            from: coins[order.symbolFrom].walletFrom, // account name in api microservice
+            // from: coins[order.symbolFrom].walletFrom, // account name in api microservice
+            from: order.exchangeAddrFrom, // account name in api microservice
             to: order.userAddrTo,
             value: valueFact
         });
         axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
             .then(async function(outTx) {
-                order.status = {
-                    code: 4,
-                    human: twist.humans[4],
-                    data: { hash: outTx.data.hash }
-                };
-                order.hashTxTo = outTx.data.hash;
-                if (res) res.json({ error: false, hash: outTx.data.hash });
-                order.save(function(err) {
-                    if (err) return myErrorHandler(
-                        'makeTxTo: exec order ' +
-                        order.exchangeTxId +
-                        ' save, ' + err);
-                });
-                mess('makeRefund', ' exec order ' + order.exchangeTxId +
-                    ': to user Tx hash ' + order.hashTxTo);
-                //  !!!TODO correct awat Tx to user
-                var tx = {
-                    addrFrom: '',
-                    hash: order.hashTxTo,
-                    orderID: order.exchangeTxId,
-                    createDateUTC: '',
-                    confirms: 0,
-                    value: valueFact,
-                    To: order.userAddrTo
-                };
-                tools.incomingTx(tx);
-                utils.startRefundWait(order);
+                if (outTx != null && outTx.data.hash != null) {
+                    order.status = {
+                        code: 4,
+                        human: twist.humans[4],
+                        data: { hash: outTx.data.hash }
+                    };
+                    order.hashTxTo = outTx.data.hash;
+                    if (res) res.json({ error: false, hash: outTx.data.hash });
+                    order.save(function(err) {
+                        if (err) return myErrorHandler(
+                            'makeTxTo: exec order ' +
+                            order.exchangeTxId +
+                            ' save, ' + err);
+                    });
+                    mess('makeRefund', ' exec order ' + order.exchangeTxId +
+                        ': to user Tx hash ' + order.hashTxTo);
+                    //  !!!TODO correct awat Tx to user
+                    var tx = {
+                        addrFrom: '',
+                        hash: order.hashTxTo,
+                        orderID: order.exchangeTxId,
+                        createDateUTC: '',
+                        confirms: 0,
+                        value: valueFact,
+                        To: order.userAddrTo
+                    };
+                    tools.incomingTx(tx);
+                    utils.startRefundWait(order);
+                } else {
+                    myErrorHandler('exec order ' + order.exchangeTxId +
+                        ': Tx to ' + order.userAddrTo + ' not created!', res);
+                }
             })
             .catch((err) => {
-                myErrorHandler(
-                    'exec order ' +
-                    order.exchangeTxId +
-                    ': Tx to ' +
-                    order.userAddrTo +
-                    ' not created, ' +
-                    err, res
-                );
+                myErrorHandler('exec order ' + order.exchangeTxId +
+                    ': Tx to ' + order.userAddrTo + ' chain API error ' +
+                    err, res);
             });
     },
 

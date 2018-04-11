@@ -1,6 +1,30 @@
 //  file coinUtils.js
 
 module.exports = {
+
+    getCoinBase: coin => {
+        const cb = this.coinUpdated;
+        axios
+            .get(coins[coin].api + "balanceTwist/" + coins[coin].walletFrom)
+            .then(function(response) {
+                if (response) {
+                    if (response.status == 200) {
+                        coins[coin].balance = response.data.balance;
+                        coins[coin].minerFee = response.data.minerFee;
+                        cb(coin);
+                        return;
+                    }
+                }
+                myErrorHandler(
+                    "getBalance: invalid balance response from service " +
+                    coins[coin].symbol +
+                    " API"
+                );
+                coins[coin].enabled = false;
+                cb(coin);
+            })
+    },
+
     getBalance: function(coin) {
         const cb = this.coinUpdated;
         axios

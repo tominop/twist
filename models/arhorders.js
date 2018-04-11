@@ -31,6 +31,7 @@ const OrderSchema = new Schema({
     hashTxTo: String,
     confirmTxTo: Boolean,
     exchangeAddrTo: String,
+    exchangeAddrFrom: String,
     symbol: String,
     amount: Number,
     received: Number,
