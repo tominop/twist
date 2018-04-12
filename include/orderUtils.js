@@ -95,9 +95,9 @@ module.exports = {
         } else return;
         tools.saveOrder(order, 'findTxFrom');
         if (order.confirmTxTo) {
-            const mess = 'withdraw Tx ' + outTx.hashTx + ' confirmed, order ' + order.exchangeTxId + ' finished successfully!';
-            exec.stopWithdrawWait(order, timeout, interval, false, mess);
-            tools.setOrderStatus(order, 6, {
+            const mess1 = 'withdraw Tx ' + outTx.hashTx + ' confirmed, order ' + order.exchangeTxId + ' finished successfully!';
+            exec.stopWithdrawWait(order, timeout, interval, false, mess1);
+            utils.setOrderStatus(order, 6, {
                 archived: true,
                 confirmations: outTx.confirms,
                 time: new Date()

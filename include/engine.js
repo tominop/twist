@@ -69,7 +69,7 @@ module.exports = {
             if (order.status.code == 0) exec.startDepositWait(order);
             else if (order.status.code == 1 || order.status.code == 2)
                 engine.checkDepositStatus(order);
-            else if (order.status.code == 3) exec.makeWithdrawTx(order);
+            else if (order.status.code == 3) exec.startWithdrawWait(order);
             else if (order.status.code == 4)
                 engine.checkRefundStatus1(order);
             else if (order.status.code == 5)

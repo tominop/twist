@@ -79,9 +79,9 @@ module.exports = {
         order.waitConfirm = false;
         //  awaiting deposit timer
         var ttlTimeOut = setTimeout(() => {
-            const mess = 'deposit not received in ' + twist.ttl + 'min. period';
-            exec.stopDepositWait(order, myInterval, ttlTimeOut, true, mess);
-            utils.setOrderStatus(order, 7, { code: 1, reason: mess, time: new Date() })
+            const mess1 = 'deposit not received in ' + twist.ttl + 'min. period';
+            exec.stopDepositWait(order, myInterval, ttlTimeOut, true, mess1);
+            utils.setOrderStatus(order, 7, { code: 1, reason: mess1, time: new Date() })
             tools.arhOrder(order);
         }, order.ttl * 60000);
         //  checking incoming tx timer
@@ -95,19 +95,19 @@ module.exports = {
         order.waitConfirm = true;
         clearTimeout(timeout);
         timeout = setTimeout(() => {
-            const mess = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
-            exec.stopDepositWait(order, interval, timeout, true, mess);
-            tools.setOrderStatus(order, 7, { code: 2, reason: mess, time: new Date() })
+            const mess1 = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
+            exec.stopDepositWait(order, interval, timeout, true, mess1);
+            tools.setOrderStatus(order, 7, { code: 2, reason: mess1, time: new Date() })
             tools.arhOrder(order);
         }, twist.waitConfirmPeriod * 60000);
     },
 
-    stopDepositWait: (order, interval, timeout, err, mess) => {
+    stopDepositWait: (order, interval, timeout, err, mess1) => {
         clearTimeout(timeout);
         clearInterval(interval);
         methods.awaitDeposit(order, 'stop');
-        if (err) return myErrorHandler('stopDepositWait order ' + order.exchangeTxId + ' ' + mess);
-        mess('stopDepositWait ' + order.exchangeTxId, mess);
+        if (err) return myErrorHandler('stopDepositWait order ' + order.exchangeTxId + ' ' + mess1);
+        mess('stopDepositWait ' + order.exchangeTxId, mess1);
         exec.startWithdrawWait(order);
     },
 
@@ -118,9 +118,9 @@ module.exports = {
         if (!methods.awaitWithdraw(order, 'start')) return;
         var myInterval;
         var ttlTimeOut = setTimeout(() => {
-            const mess = 'withdraw not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
-            exec.stopWithdrawWait(order, myInterval, ttlTimeOut, true, mess);
-            utils.setOrderStatus(order, 7, { code: 4, reason: mess, time: new Date() })
+            const mess1 = 'withdraw not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
+            exec.stopWithdrawWait(order, myInterval, ttlTimeOut, true, mess1);
+            utils.setOrderStatus(order, 7, { code: 4, reason: mess1, time: new Date() })
         }, twist.waitConfirmPeriod * 60000);
         myInterval = setInterval(() => {
             utils.findWithdrawTx(order, myInterval, ttlTimeOut)
@@ -135,9 +135,9 @@ module.exports = {
             valueFact + order.symbolTo + ' to user');
         var hash = methods.makeWithdrawTX(order, valueFact);
         if (hash == null) {
-            const mess = 'withdraw Tx not created';
-            exec.stopWithdrawWait(order, interval, timeout, true, mess);
-            utils.setOrderStatus(order, 7, { code: 3, reason: mess, time: new Date() })
+            const mess1 = 'withdraw Tx not created';
+            exec.stopWithdrawWait(order, interval, timeout, true, mess1);
+            utils.setOrderStatus(order, 7, { code: 3, reason: mess1, time: new Date() })
             tools.arhOrder(order);
             return;
         } else {
@@ -159,11 +159,11 @@ module.exports = {
         };
     },
 
-    stopWithdrawWait: (order, interval, timeout, err, mess) => {
+    stopWithdrawWait: (order, interval, timeout, err, mess1) => {
         clearTimeout(timeout);
         clearInterval(interval);
         methods.awaitWithdraw(order, 'stop')
-        if (err) return myErrorHandler('stopWithdrawWait order ' + order.exchangeTxId + ' ' + mess);
-        mess('stopWithdrawWait ' + order.exchangeTxId, mess);
+        if (err) return myErrorHandler('stopWithdrawWait order ' + order.exchangeTxId + ' ' + mess1);
+        mess('stopWithdrawWait ' + order.exchangeTxId, mess1);
     }
 }
