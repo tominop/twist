@@ -7,9 +7,10 @@
 
 module.exports = {
 
-    newOrder: async function (exchange, data, res) {
+    newOrder: async(exchange, data, res) => {
         if (!utils.validateUser(data.userID, res)) return;
         if (!utils.validateCoins(data.symbolFrom, data.valueFrom, data.symbolTo, data.valueTo, res)) return;
+        mess('newOrder', 'new order from user ' + data.userID + ' creating starts now');
         const userID = data.userID,
             userEmail = data.userEmail || '',
             userPhone = data.userPhone || '',
@@ -23,7 +24,7 @@ module.exports = {
         const valueTo = valueToFix(valueFrom * ratio);
         const time = new Date().getTime();
         var resp = await methods.getAddressTo(symbolFrom, exchange, 0, userID, time.toString()); //  deposit to address
-        if (resp == null || resp.data.error) return myErrorHandler('newOrder, new addrTo generation fail')
+        if (resp == null || resp.data.error) return myErrorHandler('newOrder, new addrTo generation fail', res)
         const addrTo = resp.data.address;
         // !!!TODO        resp = await methods.getAddressFrom(symbolTo, exchange); //  withdrawal form address
         //        if (resp == null || resp.data.error) return myErrorHandler('newOrder, get exchangeAddrFrom fail')
@@ -53,7 +54,7 @@ module.exports = {
             hashTxTo: '',
             confirmTxTo: false,
             exchangeAddrTo: addrTo,
-            exchangeAddrFrom: coins[order.symbolFrom].walletFrom, //..!!!TODO addrFrom,
+            exchangeAddrFrom: coins[symbolFrom].walletFrom, //..!!!TODO addrFrom,
             symbol: symbolFrom,
             amount: valueFrom,
             received: 0.0,
@@ -63,111 +64,106 @@ module.exports = {
         // Order is saved to DB and added to executed orders array
         coins[symbolTo].reserv = coins[symbolTo].reserv + valueTo;
         execOrders[execOrders.length] = { id: order.exchangeTxId, time: new Date(), status: 0 }
-        res.json({error: false, order: order});
-        exec.takeOrder(order);
+        res.json({ error: false, order: order });
+        exec.startDepositWait(order);
     },
 
-    takeOrder: async order => {
-    },
-
-    startDepositWait: function (order) {
+    startDepositWait: order => {
         mess('startDepositWait', 'order id ' + order.exchangeTxId + ' awaiting deposit starts now');
-            if ((order.status).code != 0) tools.setOrderStatus(order, 0, { reason: 'retake order by restart service', time: new Date })
+        if ((order.status).code != 0) utils.setOrderStatus(order, 0, { reason: 'retake order by restart service', time: new Date })
             //  Start awaiting deposit (incoming Tx hook service)
-            var resp = methods.awaitDeposit(order, 'start');
-            if (!resp) {
-                coins[order.symbolFrom].canReceive = false;
-                myErrorHandler('startDepositWait: order id ' +
-                order.exchangeTxId + ' API ' +
-                order.symbolFrom + ' not response');
-                return;
-            };
-            tools.setOrderStatus(order, 1, { time: new Date() });
-            var myInterval;
+        if (!methods.awaitDeposit(order, 'start')) return;
+        utils.setOrderStatus(order, 1, { time: new Date() });
+        var myInterval;
+        order.depositIsFind = false;
+        order.waitConfirm = false;
         //  awaiting deposit timer
-        var ttlTimeOut = setTimeout(function () {
-            clearInterval(myInterval);
-            utils.stopDepositWait(order);
-            myErrorHandler('startDepositWait: order id ' +
-                order.exchangeTxId +
-                ' deposit to ' +
-                order.exchangeAddrTo +
-                ' not received in order ttl period'
-            );
-            tools.setOrderStatus(order, 7, { code: 1, reason: 'deposit not received in ' + twist.ttl + 'min. period', time: new Date() })
+        var ttlTimeOut = setTimeout(() => {
+            const mess = 'deposit not received in ' + twist.ttl + 'min. period';
+            exec.stopDepositWait(order, myInterval, ttlTimeOut, true, mess);
+            utils.setOrderStatus(order, 7, { code: 1, reason: mess, time: new Date() })
             tools.arhOrder(order);
         }, order.ttl * 60000);
         //  checking incoming tx timer
-        myInterval = setInterval(function () {
-            if (coins[order.symbolFrom].canReceive)
-                utils.findTxTo(order, myInterval, ttlTimeOut)
-            else {
-                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not available', time: new Date() })
-            }
+        myInterval = setInterval(() => {
+            utils.findDepositTx(order, myInterval, ttlTimeOut);
+            if (order.depositIsFind && !order.waitConfrim) exec.startDepositWaitConfirm(order, myInterval, ttlTimeOut);
         }, 20000);
     },
 
-    stopDepositWait: function (order) {
-        methods.awaitDeposit(order, 'stop');
-    },
-    
-    /// TODO !!!
-    makeWithdrawTx: async order => {
-        var resp;
-        if ((order.status).code != 3) tools.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
-        if (coins[order.symbolFrom].canSend) {
-            mess('makeWithdrawTx', 'order ' + order.exchangeTxId + ' make Tx to user starts');
-            resp = await methods.refund('send', order);
-            if (!resp || resp.error) return utils.stopWithdrawWait(order, refundTimers); //..in error stop awaiting refund Tx and outgoing Tx hook service
-            tools.setOrderStatus(order, 4, { hash: resp.hash, time: new Date() });
-        } else {
-            //   !!!!! TODO set counter errors and abort order
-            var counterr;
-            counterr++;
-        };
-        //   !!!!! TODO
-    },
-
-    startWithdrawTxWait: order => {             //  start awaiting tx (run outgoing Tx hook service)
-        resp = await methods.refund('start', order);
-        if (!resp || resp.error) return coins[order.symbolTo].canSend = false; //   outgoing tx awating service not wotks, do not refund!!!
-        //  in succsess start awaiting refund Tx and send data for outgoing tx (run outgoing Tx send service)
-        var refundTimers = utils.waitWithdraw(order);
-    },
-
-    //  TODO!!!!!
-    startWithdrawWait: async function (order) {
-        resp = await methods.awaitWithdraw(order, 'start');
-        if (!resp || resp.error) return;
-        mess('waitWithdraw', 'order ' +
-            order.exchangeTxId +
-            ' : awaiting refund confirmation starts');
-        var myInterval;
-        var ttlTimeOut = setTimeout(function () {
-            clearInterval(myInterval);
-            utils.stopWithdrawWait(order);
-            myErrorHandler(
-                'waitWithdraw: order ' +
-                order.exchangeTxId +
-                ' refund to ' +
-                order.userAddrTo +
-                ' not confirmed in confirmation period'
-            );
-            tools.setOrderStatus(order, 7, { code: 4, reason: 'refund not confirmed in ' + twist.waitConfirmPeriod + 'min. period', time: new Date() })
+    startDepositWaitConfirm: (order, interval, timeout) => {
+        order.waitConfirm = true;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const mess = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
+            exec.stopDepositWait(order, interval, timeout, true, mess);
+            tools.setOrderStatus(order, 7, { code: 2, reason: mess, time: new Date() })
+            tools.arhOrder(order);
         }, twist.waitConfirmPeriod * 60000);
-        myInterval = setInterval(function () {
-            if (coins[order.symbolTo].enabled)
-                utils.findTxFrom(order, myInterval, ttlTimeOut)
-            else {
-                //                tools.setOrderStatus(order, order.status.code + 10, { reason: 'awaitDeposit service not available', time: new Date() })
-            }
+    },
+
+    stopDepositWait: (order, interval, timeout, err, mess) => {
+        clearTimeout(timeout);
+        clearInterval(interval);
+        methods.awaitDeposit(order, 'stop');
+        if (err) return myErrorHandler('stopDepositWait order ' + order.exchangeTxId + ' ' + mess);
+        mess('stopDepositWait ' + order.exchangeTxId, mess);
+        exec.startWithdrawWait(order);
+    },
+
+    startWithdrawWait: async order => {
+        mess('startWithdrawWait', 'order id ' + order.exchangeTxId + ' awaiting withdraw starts now');
+        if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
+            //  Start awaiting withdrawal (outgoing Tx hook service)
+        if (!methods.awaitWithdraw(order, 'start')) return;
+        var myInterval;
+        var ttlTimeOut = setTimeout(() => {
+            const mess = 'withdraw not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
+            exec.stopWithdrawWait(order, myInterval, ttlTimeOut, true, mess);
+            utils.setOrderStatus(order, 7, { code: 4, reason: mess, time: new Date() })
+        }, twist.waitConfirmPeriod * 60000);
+        myInterval = setInterval(() => {
+            utils.findWithdrawTx(order, myInterval, ttlTimeOut)
         }, 20000);
+        exec.makeWithdraw(order, myInterval, ttlTimeOut);
     },
 
+    makeWithdraw: (order, interval, timeout) => {
+        const valueFact = utils.calcValueFact(order)
+        mess('makeWithdraw', 'order ' +
+            order.exchangeTxId + ' exec continue: send ' +
+            valueFact + order.symbolTo + ' to user');
+        var hash = methods.makeWithdrawTX(order, valueFact);
+        if (hash == null) {
+            const mess = 'withdraw Tx not created';
+            exec.stopWithdrawWait(order, interval, timeout, true, mess);
+            utils.setOrderStatus(order, 7, { code: 3, reason: mess, time: new Date() })
+            tools.arhOrder(order);
+            return;
+        } else {
+            if (hash.length > 15) {
+                order.hashTxTo = outTx.data.hash;
+                //  !!!TODO correct await Tx to user
+                var tx = {
+                    addrFrom: '',
+                    hash: order.hashTxTo,
+                    orderID: order.exchangeTxId,
+                    createDateUTC: '',
+                    confirms: 0,
+                    value: valueFact,
+                    To: order.userAddrTo
+                };
+                tools.incomingTx(tx);
+            };
+            utils.setOrderStatus(order, 4, { hash: hash, time: new Date() });
+        };
+    },
 
-    stopWithdrawWait: function (order) {
+    stopWithdrawWait: (order, interval, timeout, err, mess) => {
+        clearTimeout(timeout);
+        clearInterval(interval);
         methods.awaitWithdraw(order, 'stop')
-    },
-
-
+        if (err) return myErrorHandler('stopWithdrawWait order ' + order.exchangeTxId + ' ' + mess);
+        mess('stopWithdrawWait ' + order.exchangeTxId, mess);
+    }
 }

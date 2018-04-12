@@ -7,7 +7,7 @@
 
 module.exports = {
 
-    awaitDeposit: async (order, action) => {
+    awaitDeposit: async(order, action) => {
         mess('awaitDeposit', action + 'ing now for odrer id ' + order.exchangeTxId + ', coin ' + order.symbolFrom);
         var data = {
             addrs: order.exchangeAddrTo
@@ -26,32 +26,7 @@ module.exports = {
         return true;
     },
 
-    refund: async function (action, order, summ) {
-        var data;
-        mess('refund', action + 'ing now for order' + order.exchangeTxId + ' coin ' + coins[order.symbolFrom]);
-        if (action == 'send') {
-            const valueFact = utils.calcValueFact(order);
-            data = {
-                orderId: order.exchangeAddrTo,
-                from: coins[order.symbolFrom].walletFrom, // account name in api microservice
-                to: order.userAddrTo,
-                value: valueFact,
-            };
-        };
-        return axios.post(
-            coins[order.symbolFrom].api + action +
-            'TxAddrs', data).catch((err) => {
-                myErrorHandler(
-                    'awaitDeposit: exec order ' +
-                    order.exchangeTxId +
-                    ' service ' +
-                    order.symbolFrom +
-                    err
-                );
-            });
-    },
-
-    awaitWithdraw: async function (order, action) {
+    awaitWithdraw: async(order, action) => {
         mess('awaitWithdraw', action + 'ing now for odrer id ' + order.exchangeTxId + ', coin ' + order.symbolTo);
         var data = {
             addrs: order.userAddrTo
@@ -61,15 +36,37 @@ module.exports = {
             data.url = twist.url + '/twist/incomingtx';
             data.hash = order.hashTxTo
         };
-        return axios.post(
-            coins[order.symbolTo].api + action + 'WaitTx', data)
+        var resp = await axios.post(
+                coins[order.symbolTo].api + action + 'WaitTx', data)
             .catch((err) => {
                 myErrorHandler('awaitWithdraw ' + action + 'ing for order id ' +
                     order.exchangeTxId + ', coin ' + order.symbolTo + ' ' + err);
             });
+        if (!resp || resp == null || resp.error == true) return false;
+        return true;
     },
 
-    getAddressTo: async (symbolFrom, exchange, attrib, userId, orderId) => {
+    /// TODO !!!
+    makeWithdrawTx: async(order, value) => {
+        var resp;
+        if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
+
+        var jsonData = JSON.stringify({
+            // from: coins[order.symbolFrom].walletFrom, // account name in api microservice
+            from: order.exchangeAddrFrom, // account name in api microservice
+            to: order.userAddrTo,
+            value: value
+        });
+        var outTx = await axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
+            .catch(err => {
+                myErrorHandler('exec order ' + order.exchangeTxId +
+                    ': Tx to ' + order.userAddrTo + ' chain API error ' + err);
+            });
+        if (outTx != null && outTx.data.hash != null) return outTx.data.hash;
+    },
+
+    getAddressTo: async(symbolFrom, exchange, attrib, userId, orderId) => {
+        mess('getAddressTo', 'new addres for exchange ' + exchange + ' generating starts now');
         var data = {
             exchange: exchange,
             attrib: attrib,
@@ -83,7 +80,8 @@ module.exports = {
             });
     },
 
-    getAddressFrom: async (symbolTo, exchange) => {
+    getAddressFrom: async(symbolTo, exchange) => {
+        mess('getAddressFrom', 'wallet addres for exchange ' + exchange + ' searching starts now');
         return axios.get(coins[symbolTo].api + 'addrfrom/' + exchange)
             .catch(err => {
                 myErrorHandler('getAddressFrom for exchange ' +

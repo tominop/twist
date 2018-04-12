@@ -15,15 +15,15 @@ module.exports = {
 
     timerCheck: [],
 
-    start: function(res) {
-        this.setCallPeriod(this.coinsCheck, twist.coinsCheckPeriod, 0);
-        this.setCallPeriod(this.helthCheck, twist.helthCheckPeriod, 1);
+    start: res => {
+        engine.setCallPeriod(engine.coinsCheck, twist.coinsCheckPeriod, 0);
+        engine.setCallPeriod(engine.helthCheck, twist.helthCheckPeriod, 1);
         //        this.setCallPeriod(this.orderCheck, twist.orderCheckPeriod);
-        this.orderCheck();
+        engine.orderCheck();
         mess('twist onload', 'orders engine starts', res)
     },
 
-    stop: function(clear, res) {
+    stop: (clear, res) => {
         clearTimeout(engine.timerCheck[0]);
         clearTimeout(engine.timerCheck[1]);
         if (clear === 'clear') {
@@ -34,7 +34,7 @@ module.exports = {
         mess('engine', 'stops and not clears orders and txs', res)
     },
 
-    setCallPeriod: function(func, timeout, ind) {
+    setCallPeriod: (func, timeout, ind) => {
         func();
         engine.timerCheck[ind] = setTimeout(function check() {
             func();
@@ -42,7 +42,7 @@ module.exports = {
         }, timeout * 60000); //  check period in min.
     },
 
-    coinsCheck: function() {
+    coinsCheck: () => {
         for (coin in coins) {
             if (coins[coin].active) {
                 coins[coin].updated = false;
@@ -59,56 +59,56 @@ module.exports = {
         }
     },
 
-    helthCheck: function() {},
+    helthCheck: () => {},
 
-    orderCheck: async function() {
+    orderCheck: async() => {
         var key, order;
         var orders = await tools.getNewOrders();
         for (key in orders) {
             order = orders[key];
-            if (order.status.code == 0) exec.takeOrder(order);
+            if (order.status.code == 0) exec.startDepositWait(order);
             else if (order.status.code == 1 || order.status.code == 2)
-                this.checkDepositStatus(order);
+                engine.checkDepositStatus(order);
             else if (order.status.code == 3) exec.makeWithdrawTx(order);
             else if (order.status.code == 4)
-                this.checkRefundStatus1(order);
+                engine.checkRefundStatus1(order);
             else if (order.status.code == 5)
-                this.checkRefundStatus1(order);
+                engine.checkRefundStatus1(order);
             else if (order.status.code > 5) tools.arhOrder(order);
         };
     },
 
-    checkDepositStatus: async function (order) { //  no deposit found before service restart
+    checkDepositStatus: async order => { //  no deposit found before service restart
         var ind = utils.orderToInd(order.exchangeTxId);
         if (ind < 0) {
             var existTx = await tools.findTxByAddr(order.exchangeAddrTo);
-            if (existTx == null) return exec.takeOrder(order);
-            return utils.startDepositWait(order);
+            if (existTx == null) return exec.startDepositWait(order);
+            return exec.startDepositWait(order);
         }
         if (coins[order.symbolFrom].canReceive) {
             return; //!!!TODO - check time!!! and hook
             resp = await methods.awaitDeposit(order, 'check')
             if (resp && !resp.error) return
-            //  need restart awaitDeposit
+                //  need restart awaitDeposit
             resp = await methods.awaitDeposit(order, 'start');
-            if (resp.error) { } else { };
+            if (resp.error) {} else {};
         }
         //        tools.saveOrder(order, 'checkDepositStatus'); 
     },
 
-    checkDepositStatus2: async function (order) {
+    checkDepositStatus2: async order => {
         var ind = utils.orderToInd(order.exchangeTxId);
-        if (ind < 0) return utils.startDepositWait(order);
+        if (ind < 0) return exec.startDepositWait(order);
         return;
         //  !!!TODO check time and hook
         if (coins[order.symbolFrom].canReceive) {
             resp = await methods.awaitDeposit('check', order)
             if (!resp.error) return
-            //  need restart awaitDeposit
+                //  need restart awaitDeposit
             resp = await methods.awaitDeposit('start', order);
         };
         tools.saveOrder(order, 'checkDepositStatus');
-    },
+    }
 
 
 

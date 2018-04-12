@@ -5,11 +5,11 @@
 user = require('../include/userUtils');
 
 //  SC UserAddrReg: newUser(uID) route 
-app.get('/twist/newuser/:uid', function(req, res) {
+app.get('/twist/newuser/:uid', (req, res) => {
     const userID = req.params.uid;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res)
     user.apiCall(coins['YODA'].api + 'uar/newuser/' + userID)
-        .then(function(ureg) {
+        .then(ureg => {
             if (ureg) {
                 if (ureg.status == 200) return res.json({ error: false, hash: ureg.data.hash });
             }
@@ -21,13 +21,13 @@ app.get('/twist/newuser/:uid', function(req, res) {
 });
 
 //  SC UserAddrReg: setUser(uID, status) route 
-app.post('/twist/setuser', function(req, res) {
+app.post('/twist/setuser', (req, res) => {
     const userID = req.body.userID,
         userStatus = req.body.userStatus;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res)
     if (invalidUserStatus(userStatus)) return myErrorHandler('invalid userStatus', res)
     user.apiCall(coins['YODA'].api + 'uar/setuser/' + userID + '-' + userStatus)
-        .then(function(ureg) {
+        .then((ureg) => {
             if (ureg) {
                 if (ureg.status == 200) return res.json({ error: false, hash: ureg.data.hash });
             }
@@ -39,7 +39,7 @@ app.post('/twist/setuser', function(req, res) {
 });
 
 //  userAddrBanCheck() route 
-app.post('/twist/iuban', function(req, res) {
+app.post('/twist/iuban', (req, res) => {
     const userID = req.body.userID,
         userAddr = req.body.userAddr;
     var symbolAddr = req.body.symbolAddr;
@@ -48,7 +48,7 @@ app.post('/twist/iuban', function(req, res) {
     if (invalidAddr(symbolAddr, userAddr)) return myErrorHandler('invalid address', res);
     symbolAddr = user.symbolConvert(symbolAddr);
     axios.all([user.apiCall(coins['YODA'].api + 'uar/checkuser/' + userID), user.apiCall(coins['YODA'].api + 'uar/checkaddrs/' + symbolAddr + userAddr)])
-        .then(axios.spread(function(uban, aban) { // Both requests are now complete
+        .then(axios.spread((uban, aban) => { // Both requests are now complete
             if (uban && aban) {
                 if (uban.status == 200 && aban.status == 200) return res.json({ error: false, userBanned: (uban.data.status == '9'), addrBanned: (aban.data.status == '9') });
             }
@@ -60,11 +60,11 @@ app.post('/twist/iuban', function(req, res) {
 });
 
 //  userAddrBanCheck() route 
-app.get('/twist/iuban/:uid', function(req, res) {
+app.get('/twist/iuban/:uid', (req, res) => {
     const userID = req.params.uid;
     if (invalidUserID(userID)) return myErrorHandler('invalid userID', res);
     user.apiCall(coins['YODA'].api + 'uar/checkuser/' + userID)
-        .then(function(uban) {
+        .then((uban) => {
             if (uban) {
                 if (uban.status == 200) return res.json({ error: false, userBanned: (uban.data.status == '9') });
             }

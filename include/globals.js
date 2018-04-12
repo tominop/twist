@@ -8,18 +8,18 @@ global.coins = require(twist.mode == 'development' ? '../private/coins' : './coi
 axios.defaults.headers.common['Authorization'] = 'Bearer ' + dbConfig.token;
 
 //  global functions
-global.mess = function(name, message, res) {
+global.mess = (name, message, res) => {
     if (res) res.json({ error: false, response: message });
     console.log(timeNow() + name + ': ' + message);
 };
 
-global.myErrorHandler = function(message, res) {
+global.myErrorHandler = (message, res) => {
     if (res) res.json({ error: true, response: 'Error: ' + message });
     console.log(timeNow() + ' Error: ' + message);
     return false;
 };
 
-global.timeNow = function() {
+global.timeNow = () => {
     const time = new Date();
     return (
         [
@@ -36,7 +36,7 @@ global.timeNow = function() {
 };
 
 
-global.wait = async function(timeout) {
+global.wait = async timeout => {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve()
@@ -46,36 +46,36 @@ global.wait = async function(timeout) {
 
 
 
-global.valueToFix = function(value) {
+global.valueToFix = value => {
     return parseFloat(value.toPrecision(twist.fix))
 };
 
 
-global.invalidData = function(data) {
+global.invalidData = data => {
     return (data == undefined || data == '' || data == null);
 };
 
-global.invalidUserStatus = function(status) {
+global.invalidUserStatus = status => {
     return (invalidData(status) || parseInt(status) > 9 || parseInt(status) == 0);
 };
 
 
-global.invalidUserID = function(uid) {
+global.invalidUserID = uid => {
     return (invalidData(uid) || uid.length != 36);
 };
 
-global.invalidSymbolAddr = function(symbol) {
+global.invalidSymbolAddr = symbol => {
     for (coin in coins) { if (coins[coin].symbol == symbol) return false }
     return true;
 };
 
-global.invalidValue = function(symbol, value) {
+global.invalidValue = (symbol, value) => {
     error = invalidData(value) || (valueToFix(coins[symbol].price * value) > twist.maxLimit);
     error = error || (valueToFix(coins[symbol].price * value) < twist.minLimit);
     return error;
 };
 
-global.invalidAddr = function(symbol, addr) {
+global.invalidAddr = (symbol, addr) => {
     if (invalidData(addr)) return true
     for (coin in coins) { if (coins[coin].symbol == symbol) return false };
     return true;

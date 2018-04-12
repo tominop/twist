@@ -3,14 +3,14 @@
 
 module.exports = {
 
-    apiCall: function(url) {
+    apiCall: url => {
         return axios.get(url)
             .catch((err) => {
                 myErrorHandler('user.apiCall: ' + err)
             });
     },
 
-    symbolConvert: function(symbol) {
+    symbolConvert: symbol => {
         switch (symbol) {
             case "ETH":
                 return "ET";

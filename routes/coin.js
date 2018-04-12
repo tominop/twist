@@ -2,7 +2,7 @@
 //  get coin and other sevice functions routes
 
 //  getCions route
-app.get("/twist/getcoins", function(req, res) {
+app.get("/twist/getcoins", (req, res) => {
     var info = {};
     for (coin in coins) {
         var c = {};
@@ -15,12 +15,11 @@ app.get("/twist/getcoins", function(req, res) {
 });
 
 //  runMethod() route
-app.get("/twist/runmethod/:data", function(req, res) {
+app.get("/twist/runmethod/:data", (req, res) => {
     var data = JSON.parse(req.params.data);
     mess(' runMethod route', ' get command ' + data.name + ' param ' + data.param);
     methods.runMethod(data.name, data.param)
-    .then((response)=>{
-        res.json({error: false, result: response});
-    })
+        .then((response) => {
+            res.json({ error: false, result: response });
+        })
 });
-

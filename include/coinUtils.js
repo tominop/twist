@@ -3,15 +3,14 @@
 module.exports = {
 
     getCoinBase: coin => {
-        const cb = this.coinUpdated;
         axios
             .get(coins[coin].api + "balanceTwist/" + coins[coin].walletFrom)
-            .then(function(response) {
+            .then(response => {
                 if (response) {
                     if (response.status == 200) {
                         coins[coin].balance = response.data.balance;
                         coins[coin].minerFee = response.data.minerFee;
-                        cb(coin);
+                        Coin.coinUpdated(coin);
                         return;
                     }
                 }
@@ -21,20 +20,19 @@ module.exports = {
                     " API"
                 );
                 coins[coin].enabled = false;
-                cb(coin);
+                Coin.coinUpdated(coin);
             })
     },
 
-    getBalance: function(coin) {
-        const cb = this.coinUpdated;
+    getBalance: coin => {
         axios
             .get(coins[coin].api + "balanceTwist/" + coins[coin].walletFrom)
-            .then(function(response) {
+            .then(response => {
                 if (response) {
                     if (response.status == 200) {
                         coins[coin].balance = response.data.balance;
                         coins[coin].minerFee = response.data.minerFee;
-                        cb(coin);
+                        Coin.coinUpdated(coin);
                         return;
                     }
                 }
@@ -44,7 +42,7 @@ module.exports = {
                     " API"
                 );
                 coins[coin].enabled = false;
-                cb(coin);
+                Coin.coinUpdated(coin);
             })
             .catch((err) => {
                 myErrorHandler(
@@ -56,12 +54,11 @@ module.exports = {
                     err
                 );
                 coins[coin].enabled = false;
-                cb(coin);
+                Coin.coinUpdated(coin);
             });
     },
 
-    getPrice: function(coin, base) {
-        const cb = this.coinUpdated;
+    getPrice: (coin, base) => {
         const isYODA = coins[coin].symbol === "YODA";
         const isETHR = coins[coin].symbol === "ETHR";
         const isBTC3 = coins[coin].symbol === "BTC3";
@@ -70,7 +67,7 @@ module.exports = {
         else if (isBTC3) coin = "BTC"
         axios
             .get(twist.priceApiUrl + coins[coin].symbol + base)
-            .then(function(response) {
+            .then(response => {
                 if (response) {
                     var k = 1;
                     if (response.status == 200) {
@@ -87,7 +84,7 @@ module.exports = {
                             else if (isBTC3) coin = "BTC3";
                             coins[coin].price = valueToFix(response.data.price * k);
                         }
-                        cb(coin);
+                        Coin.coinUpdated(coin);
                         return;
                     }
                 }
@@ -97,9 +94,9 @@ module.exports = {
                     base
                 );
                 coins[coin].price = 0;
-                cb(coin);
+                Coin.coinUpdated(coin);
             })
-            .catch((err) => {
+            .catch(err => {
                 coins[coin].price = 0;
                 myErrorHandler(
                     "getPrice: price service API " +
@@ -107,16 +104,16 @@ module.exports = {
                     " connection error " +
                     err
                 );
-                cb(coin);
+                Coin.coinUpdated(coin);
             });
     },
 
-    getReserv: function(coin) {
-        this.coinUpdated(coin);
+    getReserv: coin => {
+        Coin.coinUpdated(coin);
         //    coins[coin].reserv = 0;
     },
 
-    coinUpdated: function(coin) {
+    coinUpdated: coin => {
         if (++coins[coin].updated === 3) coins[coin].updated = true;
     }
 };

@@ -15,7 +15,7 @@ utils = require("../include/orderUtils");
 
 //  main newOrder() route  //  create new order and start exchange
 
-app.post("/twist/neworder", function(req, res) {
+app.post("/twist/neworder", (req, res) => {
     if (invalidUserID(req.body.userID))
         return myErrorHandler("neworder: invalid userID", res);
     if (invalidAddr(req.body.symbolFrom, req.body.userAddrRefund))
@@ -38,34 +38,34 @@ app.post("/twist/newaddress", async(req, res) => {
 
 
 //  start engine route
-app.get("/twist/startengine", function(req, res) {
+app.get("/twist/startengine", (req, res) => {
     engine.start(res);
 });
 
 //  stop engine route
-app.get("/twist/stopengine/:clear", function(req, res) {
+app.get("/twist/stopengine/:clear", (req, res) => {
     engine.stop(req.params.clear, res);
 });
 
 //  getOrders() route
-app.get("/twist/orders", function(req, res) {
+app.get("/twist/orders", (req, res) => {
     tools.getOrders(res);
 });
 
 //  getArhOrders() route
-app.get("/twist/arhorders", function(req, res) {
+app.get("/twist/arhorders", (req, res) => {
     tools.getArhOrders(res);
 });
 
 //  getOrderByID() route
-app.get("/twist/order/:orderID", function(req, res) {
+app.get("/twist/order/:orderID", (req, res) => {
     if (invalidData(req.params.orderID))
         return myErrorHandler("orderStatusCheck: invalid order ID", res);
     tools.findOrderByID(req.params.orderID, res);
 });
 
 //  setOrderStatus() route
-app.get("/twist/status", function(req, res) {
+app.get("/twist/status", (req, res) => {
     const query = require("url").parse(req.url, true).query;
     const orderID = query.order,
         status = parseInt(query.status),
@@ -76,7 +76,7 @@ app.get("/twist/status", function(req, res) {
 });
 
 //  getOrderByAddrFrom() route
-app.get("/twist/addr/:addr", function(req, res) {
+app.get("/twist/addr/:addr", (req, res) => {
     const addr = req.params.addr;
     if (addr == undefined || addr == "")
         return myErrorHandler("getOrderByAddr: invalid address", res);
@@ -84,7 +84,7 @@ app.get("/twist/addr/:addr", function(req, res) {
 });
 
 //  getOrderByAddrFrom() route
-app.get("/twist/ordersaddr/:addr", function(req, res) {
+app.get("/twist/ordersaddr/:addr", (req, res) => {
     const addr = req.params.addr;
     if (addr == undefined || addr == "")
         return myErrorHandler("getOrdersByAddr: invalid address", res);
@@ -92,7 +92,7 @@ app.get("/twist/ordersaddr/:addr", function(req, res) {
 });
 
 //  getOrderByUserId() route
-app.get("/twist/ordersuid/:uid", function(req, res) {
+app.get("/twist/ordersuid/:uid", (req, res) => {
     const uid = req.params.uid;
     if (uid == undefined || uid == "")
         return myErrorHandler("getOrderByUserId: invalid UserId", res);
@@ -100,7 +100,7 @@ app.get("/twist/ordersuid/:uid", function(req, res) {
 });
 
 //  getOrderByUserId() route
-app.get("/twist/user/:uid", function(req, res) {
+app.get("/twist/user/:uid", (req, res) => {
     const uid = req.params.uid;
     if (uid == undefined || uid == "")
         return myErrorHandler("getOrderByUserId: invalid UserId", res);
@@ -108,21 +108,21 @@ app.get("/twist/user/:uid", function(req, res) {
 });
 
 //  deleteOrderByID() route
-app.get("/twist/deleteorder/:orderID", function(req, res) {
+app.get("/twist/deleteorder/:orderID", (req, res) => {
     if (invalidData(req.params.orderID))
         return myErrorHandler("deleterder: invalid order ID", res);
     tools.deleteOrderByID(req.params.orderID, res);
 });
 
 //  arhOrderByID() route
-app.get("/twist/arhorder/:orderID", function(req, res) {
+app.get("/twist/arhorder/:orderID", (req, res) => {
     if (invalidData(req.params.orderID))
         return myErrorHandler("arhorder: invalid order ID", res);
     tools.arhOrderByID(req.params.orderID, res);
 });
 
 //  deArhOrderByID() route
-app.get("/twist/dearhorder/:orderID", function(req, res) {
+app.get("/twist/dearhorder/:orderID", (req, res) => {
     if (invalidData(req.params.orderID))
         return myErrorHandler("arhorder: invalid order ID", res);
     tools.deArhOrderByID(req.params.orderID, res);
@@ -130,14 +130,14 @@ app.get("/twist/dearhorder/:orderID", function(req, res) {
 
 
 //  refundOrderByID() route
-app.get("/twist/refundorder/:orderID", function(req, res) {
+app.get("/twist/refundorder/:orderID", (req, res) => {
     if (invalidData(req.params.orderID))
         return myErrorHandler("arhorder: invalid order ID", res);
     tools.refundOrderByID(req.params.orderID, res);
 });
 
 //  getAddressWithBalance route
-app.get("/twist/addrbalance/:coin", function(req, res) {
+app.get("/twist/addrbalance/:coin", (req, res) => {
     const coin = req.params.coin;
     if (invalidSymbolAddr(coin))
         return myErrorHandler("getOrdersByAddr: invalid address", res);
@@ -145,7 +145,7 @@ app.get("/twist/addrbalance/:coin", function(req, res) {
 });
 
 //  getAddressWithUser route
-app.get("/twist/addruser/:coin", function(req, res) {
+app.get("/twist/addruser/:coin", (req, res) => {
     const coin = req.params.coin;
     if (invalidSymbolAddr(coin))
         return myErrorHandler("getAddressWithUser: invalid address", res);
@@ -153,7 +153,7 @@ app.get("/twist/addruser/:coin", function(req, res) {
 });
 
 //  getAddressWithUser route
-app.get("/twist/setaddruser/:coin", function(req, res) {
+app.get("/twist/setaddruser/:coin", (req, res) => {
     const coin = req.params.coin;
     if (invalidSymbolAddr(coin))
         return myErrorHandler("getAddressWithUser: invalid address", res);

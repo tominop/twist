@@ -22,11 +22,11 @@ const configDbFile = process.env.DB || twist.mode == 'development' ? './private/
 dbConfig = require(configDbFile),
     mongoose = require('mongoose');
 
-mongoose.connection.on("open", function(ref) {
+mongoose.connection.on("open", ref => {
     mess('twist', 'service connected to mongo server');
 });
 
-mongoose.connection.on("error", function(err) {
+mongoose.connection.on("error", err => {
     myErrorHandler("could not connect to mongo server: " + err.messge);
 });
 
@@ -37,7 +37,7 @@ mongoose.connect(dbConfig.url, {
 mongoose.Promise = require('bluebird');
 
 //  CORS
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
     // Website you wish to allow to connect
     res.setHeader('Access-Control-Allow-Origin', '*');
     // Request methods you wish to allow
@@ -51,7 +51,7 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.options("/*", function(req, res, next) {
+app.options("/*", (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
@@ -68,7 +68,7 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
 require('./include/globals');
 
 //  JWT token functions
-app.use(expressJwt({ secret: dbConfig.secret }), function(req, res, next) {
+app.use(expressJwt({ secret: dbConfig.secret }), (req, res, next) => {
     var arr = req.user.user.split('@');
     if (arr[1] != 'youdex') return res.sendStatus(401);
     next();
@@ -84,22 +84,11 @@ require('./routes/errorHandler');
 //  Load main functions and start service
 engine = require('./include/engine');
 
-// catch 404 and forward to error handler
-app.use(function(req, res) {
-    myErrorHandler(req.url + " route not support", res);
-});
-
-app.use(function(err, req, res, next) {
-    myErrorHandler('twist api service: ' + err, res);
-});
-
-
 const port = process.env.PORT_TWIST || 8900;
 twist.url = twist.url + ':' + port.toString();
 
 app.listen(port, async() => {
     mess('twist', 'service listening on ' + port.toString());
-    await wait(5000);
-    //  if (twist.mode != 'development') engine.start(); //..manual start engine in development mode
-    engine.start();
+    await wait(5000); //  do nothing)
+    engine.start(); //..manual start engine in development mode
 })
