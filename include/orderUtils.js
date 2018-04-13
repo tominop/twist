@@ -188,8 +188,10 @@ module.exports = {
             mess('makeWithdraw', 'twist must send change ' + change + order.symbolFrom + ' to user');
             order.valueRefund = change;
         };
-        order.fee = coins[order.symbolTo].minerFee + valueToFix(twist.fee * valueFact / 100);
-        return valueFact - order.fee;
+        const fee = coins[order.symbolTo].minerFee + valueToFix(twist.fee * valueFact / 100);
+        order.fee = fee;
+        valueFact = valueFact - fee;
+        return valueFact;
     }
 
 }
