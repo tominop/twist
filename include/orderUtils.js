@@ -179,7 +179,7 @@ module.exports = {
         var change, valueFact;
         valueFact = valueToFix(order.received * order.exchangeRatio);
         change = order.received - valueToFix(twist.maxLimit / coins[order.symbolFrom].price);
-        if (change > coins[order.To].minerFee * 2) {
+        if (change > coins[order.symbolTo].minerFee * 2) {
             //  change must be more 2 x minerFee
             valueFact = valueToFix(twist.maxLimit / coins[order.symbolTo].price);
             //        var changeOrder = new Order();
@@ -188,7 +188,7 @@ module.exports = {
             mess('makeWithdraw', 'twist must send change ' + change + order.symbolFrom + ' to user');
             order.valueRefund = change;
         };
-        order.fee = coins[symbolTo].minerFee + valueToFix(twist.fee * valueFact / 100);
+        order.fee = coins[order.symbolTo].minerFee + valueToFix(twist.fee * valueFact / 100);
         return valueFact - order.fee;
     }
 
