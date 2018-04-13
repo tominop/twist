@@ -178,10 +178,8 @@ module.exports = {
     calcValueFact: order => {
         var change, valueFact;
         valueFact = valueToFix(order.received * order.exchangeRatio);
-        change = valueToFix(
-            order.received - twist.maxLimit / coins[order.symbolFrom].price
-        );
-        if (change > coins[order.symbolFrom].minerFee * 2) {
+        change = order.received - valueToFix(twist.maxLimit / coins[order.symbolFrom].price);
+        if (change > coins[order.To].minerFee * 2) {
             //  change must be more 2 x minerFee
             valueFact = valueToFix(twist.maxLimit / coins[order.symbolTo].price);
             //        var changeOrder = new Order();
@@ -190,7 +188,8 @@ module.exports = {
             mess('makeWithdraw', 'twist must send change ' + change + order.symbolFrom + ' to user');
             order.valueRefund = change;
         };
-        return valueFact;
+        order.fee = coins[symbolTo].minerFee + valueToFix(twist.fee * valueFact / 100);
+        return valueFact - order.fee;
     }
 
 }

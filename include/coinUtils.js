@@ -31,7 +31,7 @@ module.exports = {
                 if (response) {
                     if (response.status == 200) {
                         coins[coin].balance = response.data.balance;
-                        coins[coin].minerFee = response.data.minerFee;
+                        coins[coin].minerFee = valueToFix(response.data.minerFee * coins[coin].txSize);
                         Coin.coinUpdated(coin);
                         return;
                     }

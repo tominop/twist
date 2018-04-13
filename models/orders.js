@@ -33,9 +33,9 @@ const OrderSchema = new Schema({
     exchangeAddrTo: String,
     exchangeAddrFrom: String,
     symbol: String,
-    amount: Number,
     received: Number,
-    sent: Number
+    sent: Number,
+    fee: Number
 });
 
 //Export function to create "SomeModel" model class

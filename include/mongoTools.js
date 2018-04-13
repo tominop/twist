@@ -238,7 +238,7 @@ module.exports = {
             exchangeAddrTo: order.exchangeAddrTo,
             exchangeAddrFrom: order.exchangeAddrFrom,
             symbol: order.symbol,
-            amount: order.amount,
+            fee: order.fee,
             received: order.received,
             sent: order.sent
         });
@@ -292,7 +292,7 @@ module.exports = {
             exchangeAddrTo: order.exchangeAddrTo,
             exchangeAddrFrom: order.exchangeAddrFrom,
             symbol: order.symbol,
-            amount: order.amount,
+            fee: order.fee,
             received: 0,
             sent: false
         });

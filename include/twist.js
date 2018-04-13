@@ -15,7 +15,7 @@ module.exports = {
     mode: 'development', // default
     minLimit: 1.0, // 
     maxLimit: 200.0, // 
-    fee: 0.0,
+    fee: 0.0, // twist exchange fee in proc
     fix: 5, //  number of significant digits
     humans: ['Order received', //  0..default texts for order statuses
         'Awaiting deposit', //  1

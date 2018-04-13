@@ -22,6 +22,8 @@ module.exports = {
             valueTofromUser = valueToFix(data.valueTo);
         const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
         const valueTo = valueToFix(valueFrom * ratio);
+        const fee = coins[symbolTo].minerFee + valueToFix(twist.fee * value.To / 100);
+        valueTo = valueTo - fee;
         const time = new Date().getTime();
         var resp = await methods.getAddressTo(symbolFrom, exchange, 0, userID, time.toString()); //  deposit to address
         if (resp == null || resp.data.error) return myErrorHandler('newOrder, new addrTo generation fail', res)
@@ -56,9 +58,10 @@ module.exports = {
             exchangeAddrTo: addrTo,
             exchangeAddrFrom: coins[symbolFrom].walletFrom, //..!!!TODO addrFrom,
             symbol: symbolFrom,
-            amount: valueFrom,
+            fee: coins[symbolTo].minerFee + valueToFix(twist.fee * value.To / 100),
             received: 0.0,
-            sent: 0.0
+            sent: 0.0,
+            fee: fee
         });
         tools.saveOrder(order, 'newOrder');
         // Order is saved to DB and added to executed orders array
@@ -87,7 +90,7 @@ module.exports = {
         //  checking incoming tx timer
         myInterval = setInterval(() => {
             utils.findDepositTx(order, myInterval, ttlTimeOut);
-            if (order.depositIsFind && !order.waitConfrim) exec.startDepositWaitConfirm(order, myInterval, ttlTimeOut);
+            if (order.depositIsFind && !order.waitConfrim) ttlTimeOut = exec.startDepositWaitConfirm(order, myInterval, ttlTimeOut);
         }, 20000);
     },
 
@@ -100,6 +103,7 @@ module.exports = {
             utils.setOrderStatus(order, 7, { code: 2, reason: mess1, time: new Date() })
             tools.arhOrder(order);
         }, twist.waitConfirmPeriod * 60000);
+        return timeout;
     },
 
     stopDepositWait: (order, interval, timeout, err, mess1) => {
