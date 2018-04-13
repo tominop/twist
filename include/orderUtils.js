@@ -61,7 +61,7 @@ module.exports = {
     },
 
     findWithdrawTx: async(order, interval, timeout) => {
-        if (order.hashTxFrom != '') Tx.findOne({ hashTx: order.hashTxFrom }).exec()
+        if (order.hashTxTo != '') Tx.findOne({ hashTx: order.hashTxTo }).exec()
             .then(outTx => {
                 if (outTx == null) return Tx.findOne({ To: order.userAddrTo }).exec()
                 return outTx;

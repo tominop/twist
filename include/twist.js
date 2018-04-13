@@ -14,7 +14,7 @@ module.exports = {
     waitConfirmPeriod: 60, // awaiting deposit confirmation period (in minutes)
     mode: 'development', // default
     minLimit: 1.0, // 
-    maxLimit: 2000.0, // 
+    maxLimit: 200.0, // 
     fee: 0.0,
     fix: 5, //  number of significant digits
     humans: ['Order received', //  0..default texts for order statuses

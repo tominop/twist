@@ -47,22 +47,19 @@ module.exports = {
     },
 
     /// TODO !!!
-    makeWithdrawTx: async(order, value) => {
-        var resp;
-        if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
-
+    makeWithdrawTX: async(order, value) => {
+        var outTx;
         var jsonData = JSON.stringify({
             // from: coins[order.symbolFrom].walletFrom, // account name in api microservice
             from: order.exchangeAddrFrom, // account name in api microservice
             to: order.userAddrTo,
             value: value
         });
-        var outTx = await axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
+        return axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
             .catch(err => {
                 myErrorHandler('exec order ' + order.exchangeTxId +
                     ': Tx to ' + order.userAddrTo + ' chain API error ' + err);
             });
-        if (outTx != null && outTx.data.hash != null) return outTx.data.hash;
     },
 
     getAddressTo: async(symbolFrom, exchange, attrib, userId, orderId) => {

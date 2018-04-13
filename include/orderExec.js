@@ -97,7 +97,7 @@ module.exports = {
         timeout = setTimeout(() => {
             const mess1 = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
             exec.stopDepositWait(order, interval, timeout, true, mess1);
-            tools.setOrderStatus(order, 7, { code: 2, reason: mess1, time: new Date() })
+            utils.setOrderStatus(order, 7, { code: 2, reason: mess1, time: new Date() })
             tools.arhOrder(order);
         }, twist.waitConfirmPeriod * 60000);
     },
@@ -128,20 +128,20 @@ module.exports = {
         exec.makeWithdraw(order, myInterval, ttlTimeOut);
     },
 
-    makeWithdraw: (order, interval, timeout) => {
-        const valueFact = utils.calcValueFact(order)
-        mess('makeWithdraw', 'order ' +
-            order.exchangeTxId + ' exec continue: send ' +
+    makeWithdraw: async(order, interval, timeout) => {
+        const valueFact = utils.calcValueFact(order);
+        mess('makeWithdraw', 'order ' + order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
-        var hash = methods.makeWithdrawTX(order, valueFact);
-        if (hash == null) {
+        if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date });
+        var outTx = await methods.makeWithdrawTX(order, valueFact);
+        if (outTx == null || outTx.data.hash == null) {
             const mess1 = 'withdraw Tx not created';
             exec.stopWithdrawWait(order, interval, timeout, true, mess1);
             utils.setOrderStatus(order, 7, { code: 3, reason: mess1, time: new Date() })
             tools.arhOrder(order);
             return;
         } else {
-            if (hash.length > 15) {
+            if (outTx.data.hash.length > 15) {
                 order.hashTxTo = outTx.data.hash;
                 //  !!!TODO correct await Tx to user
                 var tx = {
@@ -155,7 +155,8 @@ module.exports = {
                 };
                 tools.incomingTx(tx);
             };
-            utils.setOrderStatus(order, 4, { hash: hash, time: new Date() });
+            mess('makeWithdraw', order.symbolTo + ' Tx created, hash ' + outTx.data.hash);
+            utils.setOrderStatus(order, 4, { hash: outTx.data.hash, time: new Date() });
         };
     },
 
@@ -166,4 +167,4 @@ module.exports = {
         if (err) return myErrorHandler('stopWithdrawWait order ' + order.exchangeTxId + ' ' + mess1);
         mess('stopWithdrawWait ' + order.exchangeTxId, mess1);
     }
-}
+};

@@ -71,9 +71,9 @@ module.exports = {
                 engine.checkDepositStatus(order);
             else if (order.status.code == 3) exec.startWithdrawWait(order);
             else if (order.status.code == 4)
-                engine.checkRefundStatus1(order);
+                engine.checkWithdrawStatus(order);
             else if (order.status.code == 5)
-                engine.checkRefundStatus1(order);
+                engine.checkWithdrawStatus(order);
             else if (order.status.code > 5) tools.arhOrder(order);
         };
     },
@@ -108,8 +108,20 @@ module.exports = {
             resp = await methods.awaitDeposit('start', order);
         };
         tools.saveOrder(order, 'checkDepositStatus');
+    },
+
+    checkWithdrawStatus: async order => {
+        var ind = utils.orderToInd(order.exchangeTxId);
+        if (ind < 0) return exec.startWithdrawWait(order);
+        return;
+        //  !!!TODO check time and hook
+        if (coins[order.symbolFrom].canReceive) {
+            resp = await methods.awaitDeposit('check', order)
+            if (!resp.error) return
+                //  need restart awaitDeposit
+            resp = await methods.awaitDeposit('start', order);
+        };
+        tools.saveOrder(order, 'checkDepositStatus');
     }
-
-
 
 };
