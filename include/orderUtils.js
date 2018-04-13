@@ -60,7 +60,7 @@ module.exports = {
         };
     },
 
-    findWithdrawTx: async(order, interval, timeout) => {
+    findWithdrawTx: async(order, interval, timeout) => { //  !!!TODO - check all variants!
         if (order.hashTxTo != '') Tx.findOne({ hashTx: order.hashTxTo }).exec()
             .then(outTx => {
                 if (outTx == null) return Tx.findOne({ To: order.userAddrTo }).exec()
