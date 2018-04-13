@@ -58,7 +58,6 @@ module.exports = {
             exchangeAddrTo: addrTo,
             exchangeAddrFrom: coins[symbolFrom].walletFrom, //..!!!TODO addrFrom,
             symbol: symbolFrom,
-            fee: coins[symbolTo].minerFee + valueToFix(twist.fee * value.To / 100),
             received: 0.0,
             sent: 0.0,
             fee: fee
