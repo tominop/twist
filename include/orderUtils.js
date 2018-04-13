@@ -9,20 +9,10 @@
 module.exports = {
 
     findDepositTx: async(order, interval, timeout) => {
-        if (order.hashTxFrom != '') Tx.findOne({ hashTx: order.hashTxFrom }).exec()
-            .then(incTx => {
-                if (incTx == null) return Tx.findOne({ To: order.exchangeAddrTo }).exec()
-                return incTx;
-            })
-            .then(incTx => { utils.workDepositTx(order, incTx, interval, timeout) })
-            .catch(err => { myErrorHandler('findDepositTx order ' + order.exchangeTxId + ' ' + err); })
-        else Tx.findOne({ To: order.exchangeAddrTo }).exec()
-            .then(incTx => { utils.workDepositTx(order, incTx, interval, timeout) })
-            .catch(err => { myErrorHandler('findDepositTx order ' + order.exchangeTxId + ' ' + err); });
-    },
-
-    workDepositTx: (order, incTx, interval, timeout) => {
-        if (incTx == null) return;
+        var incTx = null;
+        if (order.hashTxFrom != '') incTx = await tools.findTx({ hashTx: order.hashTxFrom });
+        if (incTx == null) incTx = await tools.findTx({ To: order.exchangeAddrTo });
+        if (incTx == null) return incTx;
         if (incTx.confirms == 0 && order.status.code < 3) {
             if (order.status.code == 1 || incTx.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' + order.exchangeTxId + ' Tx ' +
                 incTx.hashTx + ' confirms ' + incTx.confirms);
@@ -61,19 +51,9 @@ module.exports = {
     },
 
     findWithdrawTx: async(order, interval, timeout) => { //  !!!TODO - check all variants!
-        if (order.hashTxTo != '') Tx.findOne({ hashTx: order.hashTxTo }).exec()
-            .then(outTx => {
-                if (outTx == null) return Tx.findOne({ To: order.userAddrTo }).exec()
-                return outTx;
-            })
-            .then(outTx => { utils.workWithdrawTx(order, outTx, interval, timeout) })
-            .catch(err => { myErrorHandler('findWithdrawTx order ' + order.exchangeTxId + ' ' + err); })
-        else Tx.findOne({ To: order.userAddrTo }).exec()
-            .then(outTx => { utils.workWithdrawTx(order, outTx, interval, timeout) })
-            .catch(err => { myErrorHandler('findWithdrawTx order ' + order.exchangeTxId + ' ' + err); });
-    },
-
-    workWithdrawTx: (order, outTx, interval, timeout) => {
+        var outTx = null;
+        if (order.hashTxTo != '') outTx = await tools.findTx({ hashTx: order.hashTxTo });
+        if (outTx == null) outTx = await tools.findTx({ To: order.userAddrTo });
         if (outTx == null) return;
         if (outTx.confirms == 0 && order.status.code < 5) {
             if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId + ' Tx ' +
@@ -190,7 +170,7 @@ module.exports = {
         };
         const fee = coins[order.symbolTo].minerFee + valueToFix(twist.fee * valueFact / 100);
         order.fee = fee;
-        valueFact = valueFact - fee;
+        valueFact = valueToFix(valueFact - fee);
         return valueFact;
     }
 

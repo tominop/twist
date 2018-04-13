@@ -19,10 +19,12 @@ app.get("/twist/txs", (req, res) => {
 });
 
 //  getTxs() route
-app.get("/twist/findtx/:addr", (req, res) => {
-    Tx.findOne({ To: req.params.addr }).exec()
-        .then(tx => { res.json({ error: false, tx: tx }); })
-        .catch(err => { myErrorHandler("findtx tx found " + err, res); })
+app.get("/twist/findtx/:addr", async (req, res) => {
+    var tx = await tools.findTx({ To: req.params.addr })
+    if (tx != null) return res.json({ error: false, tx: tx, archived: false });
+    tx = await tools.findArhTx({ To: req.params.addr });
+    if (tx != null) return res.json({ error: false, tx: tx, archived: true });
+    res.json({ error: true, tx: null });
 });
 
 //  arhTxByID() route

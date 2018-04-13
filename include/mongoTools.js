@@ -362,17 +362,20 @@ module.exports = {
 
 
     findTx: param => {
-        var tx = '';
-        mess('findTx', 'param ' + JSON.stringify(param))
-        Tx.findOne(param).exec()
-            .then(txn => {
-                return txn;
-            })
+        return Tx.findOne(param)
+        .exec()
             .catch(err => {
-                return myErrorHandler('findTxByAddr : ' + err)
+                myErrorHandler('findTx param ' + JSON.stringify(param) + ' ' + err)
             })
     },
 
+    findArhTx: param => {
+        return ArhTx.findOne(param)
+        .exec()
+            .catch(err => {
+                myErrorHandler('findArhTx param ' + JSON.stringify(param) + ' ' + err)
+            })
+    },
 
     findTxByAddr: async addr => {
         tx = Tx.findOne({ To: addr }).exec()
