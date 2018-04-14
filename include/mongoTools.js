@@ -251,7 +251,6 @@ module.exports = {
             };
         });
         if (res) res.json({ error: false, arhorder: arhorder });
-        order = null;
         tools.arhOrderTxs(order);
     },
 
@@ -415,6 +414,7 @@ module.exports = {
         for (tx in txs) await tools.arhTx(txs[tx]);
         txs = await tools.findTxs({ To: order.userAddrTo });
         for (tx in txs) await tools.arhTx(txs[tx]);
+        order = null;
     },
 
 
