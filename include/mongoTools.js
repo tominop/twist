@@ -250,11 +250,8 @@ module.exports = {
                 res = undefined
             };
         });
-        if (res)
-            res.json({
-                error: false,
-                arhorder: arhorder
-            });
+        if (res) res.json({ error: false, arhorder: arhorder });
+        tools.arhOrderTxs(order);
     },
 
     deArhOrderByID: (oid, res) => {
@@ -340,7 +337,11 @@ module.exports = {
                         value: tx.value,
                         To: tx.To
                     });
-                } else existTx.confirms = tx.confirms;
+                } else {
+                    existTx.confirms = tx.confirms;
+                    existTx.addrFrom = tx.addrFrom;
+                    existTx.createDateUTC = tx.createDateUTC;
+                }
                 existTx.save((err) => {
                     if (err) return myErrorHandler('incomingTx: save Tx ' + tx.hash + ' error: ' + err, res);
                     if (res) res.status(200).send('Ok');
@@ -408,6 +409,12 @@ module.exports = {
         });
     },
 
+    arhOrderTxs: async order => {
+        txs = await tools.findTxs({ addrFrom: order.userAddrFrom, To: order.exchangeAddrTo });
+        for (tx in txs) await tools.arhTx(txs[tx]);
+        txs = await tools.findTxs({ To: order.userAddrTo });
+        for (tx in txs) await tools.arhTx(txs[tx]);
+    },
 
 
     arhTxByID: (oid, res) => {

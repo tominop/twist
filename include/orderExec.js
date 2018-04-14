@@ -71,43 +71,83 @@ module.exports = {
     },
 
     startDepositWait: order => {
+        var myInterval, ttlTimeOut;
+        var depositIsFind = waitConfirm = false;
         mess('startDepositWait', 'order id ' + order.exchangeTxId + ' awaiting deposit starts now');
         if ((order.status).code != 0) utils.setOrderStatus(order, 0, { reason: 'retake order by restart service', time: new Date })
             //  Start awaiting deposit (incoming Tx hook service)
         if (!methods.awaitDeposit(order, 'start')) return;
         utils.setOrderStatus(order, 1, { time: new Date() });
-        var myInterval;
-        order.depositIsFind = false;
-        order.waitConfirm = false;
         //  awaiting deposit timer
-        var ttlTimeOut = setTimeout(() => {
+        ttlTimeOut = setTimeout(() => {
             const mess1 = 'deposit not received in ' + twist.ttl + 'min. period';
-            exec.stopDepositWait(order, myInterval, ttlTimeOut, true, mess1);
+            exec.stopDepositWait(order, true, mess1);
             utils.setOrderStatus(order, 7, { code: 1, reason: mess1, time: new Date() })
             tools.arhOrder(order);
         }, order.ttl * 60000);
         //  checking incoming tx timer
         myInterval = setInterval(() => {
-            utils.findDepositTx(order, myInterval, ttlTimeOut);
-            if (order.depositIsFind && !order.waitConfrim) ttlTimeOut = exec.startDepositWaitConfirm(order, myInterval, ttlTimeOut);
+            exec.findDepositTx(order);
+            if (depositIsFind && waitConfrim) exec.startDepositWaitConfirm(order);
         }, 20000);
     },
 
-    startDepositWaitConfirm: (order, interval, timeout) => {
-        order.waitConfirm = true;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
+    findDepositTx: async(order) => {
+        var incTx = null;
+        if (order.hashTxFrom != '') incTx = await tools.findTx({ hashTx: order.hashTxFrom });
+        if (incTx == null) incTx = await tools.findTx({ To: order.exchangeAddrTo });
+        if (incTx == null) return incTx;
+        if (incTx.confirms == 0 && order.status.code < 3) {
+            if (order.status.code == 1 || incTx.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' +
+            order.exchangeTxId + ' deposit Tx confirms ' + incTx.confirms);
+            order.status = {
+                code: 2,
+                human: twist.humans[2],
+                data: {
+                    confirmations: incTx.confirms,
+                    wait: coins[order.symbolFrom].confirmations
+                }
+            };
+        } else if (
+            order.status.code < 3 &&
+            incTx.confirms >= coins[order.symbolFrom].confirmations
+        ) {
+            order.status = {
+                code: 3,
+                human: twist.humans[3],
+                data: {
+                    confirmations: incTx.confirms,
+                    time: new Date()
+                }
+            };
+            order.confirmTxFrom = true;
+            order.received = incTx.value;
+        } else return;
+        if (!depositIsFind) depositIsFind = true;
+        order.hashTxFrom = incTx.hashTx;
+        order.userAddrFrom = incTx.addrFrom;
+        tools.saveOrder(order, 'findTxTo');
+        if (order.status.code == 3) {
+            exec.stopDepositWait(order, false, ' Tx ' + incTx.hashTx + ' confirmed ');
+            tools.arhTx(incTx);
+        };
+    },
+
+    startDepositWaitConfirm: order => {
+        waitConfirm = true;
+        clearTimeout(ttlTimeOut);
+        ttlTimeOut = setTimeout(() => {
             const mess1 = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
-            exec.stopDepositWait(order, interval, timeout, true, mess1);
+            exec.stopDepositWait(order, true, mess1);
             utils.setOrderStatus(order, 7, { code: 2, reason: mess1, time: new Date() })
             tools.arhOrder(order);
         }, twist.waitConfirmPeriod * 60000);
-        return timeout;
+        return;
     },
 
-    stopDepositWait: (order, interval, timeout, err, mess1) => {
-        clearTimeout(timeout);
-        clearInterval(interval);
+    stopDepositWait: (order, err, mess1) => {
+        clearTimeout(ttlTimeOut);
+        clearInterval(myInterval);
         methods.awaitDeposit(order, 'stop');
         if (err) return myErrorHandler('stopDepositWait order ' + order.exchangeTxId + ' ' + mess1);
         mess('stopDepositWait ' + order.exchangeTxId, mess1);
@@ -119,19 +159,56 @@ module.exports = {
         if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
             //  Start awaiting withdrawal (outgoing Tx hook service)
         if (!methods.awaitWithdraw(order, 'start')) return;
-        var myInterval;
-        var ttlTimeOut = setTimeout(() => {
+        ttlTimeOut = setTimeout(() => {
             const mess1 = 'withdraw not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
-            exec.stopWithdrawWait(order, myInterval, ttlTimeOut, true, mess1);
+            exec.stopWithdrawWait(order, true, mess1);
             utils.setOrderStatus(order, 7, { code: 4, reason: mess1, time: new Date() })
         }, twist.waitConfirmPeriod * 60000);
         myInterval = setInterval(() => {
-            utils.findWithdrawTx(order, myInterval, ttlTimeOut)
+            exec.findWithdrawTx(order);
         }, 20000);
-        exec.makeWithdraw(order, myInterval, ttlTimeOut);
+        exec.makeWithdraw(order);
     },
 
-    makeWithdraw: async(order, interval, timeout) => {
+    findWithdrawTx: async(order) => { //  !!!TODO - check all variants!
+        var outTx = null;
+        if (order.hashTxTo != '') outTx = await tools.findTx({ hashTx: order.hashTxTo });
+        if (outTx == null) outTx = await tools.findTx({ To: order.userAddrTo });
+        if (outTx == null) return;
+        if (outTx.confirms == 0 && order.status.code < 5) {
+            if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId
+             + ' withdrawal Tx confirms ' + outTx.confirms);
+            order.status = {
+                code: 5,
+                human: twist.humans[5],
+                data: {
+                    confirmations: outTx.confirms,
+                    wait: coins[order.symbolTo].confirmations
+                }
+            };
+        } else if (
+            order.status.code < 6 &&
+            outTx.confirms >= coins[order.symbolTo].confirmations
+        ) {
+            order.confirmTxTo = true;
+            order.sent = outTx.value;
+        } else return;
+        tools.saveOrder(order, 'findTxFrom');
+        if (order.confirmTxTo) {
+            const mess1 = 'withdraw Tx confirmed, order ' + order.exchangeTxId + ' executed successfully!';
+            exec.stopWithdrawWait(order, false, mess1);
+            utils.setOrderStatus(order, 6, {
+                archived: true,
+                confirmations: outTx.confirms,
+                time: new Date()
+            });
+            tools.arhTx(outTx);
+            tools.arhOrder(order);
+            return;
+        };
+    },
+
+    makeWithdraw: async(order) => {
         const valueFact = utils.calcValueFact(order);
         mess('makeWithdraw', 'order ' + order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
@@ -139,7 +216,7 @@ module.exports = {
         var outTx = await methods.makeWithdrawTX(order, valueFact);
         if (outTx == null || outTx.data.hash == null) {
             const mess1 = 'withdraw Tx not created';
-            exec.stopWithdrawWait(order, interval, timeout, true, mess1);
+            exec.stopWithdrawWait(order, true, mess1);
             utils.setOrderStatus(order, 7, { code: 3, reason: mess1, time: new Date() })
             tools.arhOrder(order);
             return;
@@ -163,9 +240,9 @@ module.exports = {
         };
     },
 
-    stopWithdrawWait: (order, interval, timeout, err, mess1) => {
-        clearTimeout(timeout);
-        clearInterval(interval);
+    stopWithdrawWait: (order, err, mess1) => {
+        clearTimeout(ttlTimeOut);
+        clearInterval(myInterval);
         methods.awaitWithdraw(order, 'stop')
         if (err) return myErrorHandler('stopWithdrawWait order ' + order.exchangeTxId + ' ' + mess1);
         mess('stopWithdrawWait ' + order.exchangeTxId, mess1);
