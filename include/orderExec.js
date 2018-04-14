@@ -137,6 +137,7 @@ module.exports = {
 
     startDepositWaitConfirm: order => {
         order.waitConfirm = true;
+        order.attemtCount = 0;  //  make withdrawal tx attempts counter
         clearTimeout(order.ttlTimeOut);
         order.ttlTimeOut = setTimeout(() => {
             const mess1 = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
@@ -157,6 +158,8 @@ module.exports = {
     },
 
     startWithdrawWait: async order => {
+        order.waitConfirm = true;
+        order.attemptCount = 0;
         mess('startWithdrawWait', 'order id ' + order.exchangeTxId + ' awaiting withdraw starts now');
         if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date })
             //  Start awaiting withdrawal (outgoing Tx hook service)
@@ -168,6 +171,7 @@ module.exports = {
         }, twist.waitConfirmPeriod * 60000);
         order.myInterval = setInterval(() => {
             exec.findWithdrawTx(order);
+            if (!order.waitConfirm) exec.makeWithdraw(order);
         }, 20000);
         exec.makeWithdraw(order);
     },
@@ -217,7 +221,9 @@ module.exports = {
         if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date });
         var outTx = await methods.makeWithdrawTX(order, valueFact);
         if (outTx == null || outTx.data.hash == null) {
-            const mess1 = 'withdraw Tx not created';
+            const mess1 = 'withdraw Tx not created attempt ' + order.attemptCount.toString();
+            order.waitConfirm = false;
+            if (order.attemptCount++ < twist.withAtt) return;
             exec.stopWithdrawWait(order, true, mess1);
             utils.setOrderStatus(order, 7, { code: 3, reason: mess1, time: new Date() })
             tools.arhOrder(order);
@@ -237,6 +243,7 @@ module.exports = {
                 };
                 tools.incomingTx(tx);
             };
+            order.waitConfirm = true;
             mess('makeWithdraw', order.symbolTo + ' Tx created, hash ' + outTx.data.hash);
             utils.setOrderStatus(order, 4, { hash: outTx.data.hash, time: new Date() });
         };
