@@ -251,6 +251,7 @@ module.exports = {
             };
         });
         if (res) res.json({ error: false, arhorder: arhorder });
+        order = null;
         tools.arhOrderTxs(order);
     },
 
