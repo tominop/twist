@@ -4,24 +4,24 @@ module.exports = {
 
     //  Order mongo utils
 
-    getNewOrders: async(res) => {
+    getNewOrders: async (res) => {
         return Order.find().exec()
             .catch((err) => { myErrorHandler('getNewOrders tools: ' + err, res); })
     },
 
-    findOrderID: async(addr) => {
+    findOrderID: async (addr) => {
         order = await Order.findOne({ userAddrFrom: addr }).exec()
             .catch((err) => { return myErrorHandler('getNewOrders tools: ' + err, res); })
         if (order == null) return
         return order.exchangeTxId;
     },
 
-    getAOrders: async(res) => {
+    getAOrders: async (res) => {
         return ArhOrder.find().exec()
             .catch((err) => { myErrorHandler('getArhOrders tools: ' + err, res); })
     },
 
-    getOrders: async(res) => {
+    getOrders: async (res) => {
         const orders = await tools.getNewOrders(res);
         if (orders == null || orders[0] == null)
             return myErrorHandler('getOrders tools: orders not found', res);
@@ -31,7 +31,7 @@ module.exports = {
         });
     },
 
-    removeOrders: async(res) => {
+    removeOrders: async (res) => {
         const orders = await tools.getNewOrders(res);
         if (orders == null || orders[0] == null) return myErrorHandler('getOrders tools: orders not found', res);
         for (order in orders) {
@@ -42,7 +42,7 @@ module.exports = {
         mess('removeOrders', 'all orders removed', res)
     },
 
-    getArhOrders: async(res) => {
+    getArhOrders: async (res) => {
         const orders = await tools.getAOrders(res);
         if (orders == null || orders[0] == null)
             return myErrorHandler('getArhOrders tools: orders not found', res);
@@ -97,7 +97,7 @@ module.exports = {
                     if (err)
                         return myErrorHandler('findOrderByAddr exec2: ' + err, res);
                     if (order == null)
-                    //                    return res.json({ error: true, response: 'order not found' });
+                        //                    return res.json({ error: true, response: 'order not found' });
                         return tools.findArhOrderByAddr(addr, res);
                     //  console.log('Order ' + orderID + '  %s', order.status.toString());
                     res.json({ error: false, order: order });
@@ -129,7 +129,7 @@ module.exports = {
         });
     },
 
-    findOrdersByUid: async(uid, res) => {
+    findOrdersByUid: async (uid, res) => {
         var orders = [],
             ords = [];
         ords = await Order.find({ userID: uid }).exec()
@@ -155,7 +155,7 @@ module.exports = {
         res.json({ error: false, orders: orders });
     },
 
-    findOrdersByAddr: async(addr, res) => {
+    findOrdersByAddr: async (addr, res) => {
         var orders = [],
             ords = [];
         var query = Order.find({});
@@ -319,10 +319,10 @@ module.exports = {
 
     //  Tx mongo utils
 
-    incomingTx: async(tx, res) => { //  web hook handler
+    incomingTx: async (tx, res) => { //  web hook handler
         // const tx = data.tx;
         Tx.findOne({ hashTx: tx.hash })
-            .exec(async(err, existTx) => {
+            .exec(async (err, existTx) => {
                 var oid;
                 if (err) return myErrorHandler('incoming Tx: ' + err, res)
                 if (existTx == null) {
@@ -364,7 +364,15 @@ module.exports = {
 
     findTx: param => {
         return Tx.findOne(param)
-        .exec()
+            .exec()
+            .catch(err => {
+                myErrorHandler('findTx param ' + JSON.stringify(param) + ' ' + err)
+            })
+    },
+
+    findTxs: param => {
+        return Tx.find(param)
+            .exec()
             .catch(err => {
                 myErrorHandler('findTx param ' + JSON.stringify(param) + ' ' + err)
             })
@@ -372,7 +380,7 @@ module.exports = {
 
     findArhTx: param => {
         return ArhTx.findOne(param)
-        .exec()
+            .exec()
             .catch(err => {
                 myErrorHandler('findArhTx param ' + JSON.stringify(param) + ' ' + err)
             })
@@ -396,8 +404,8 @@ module.exports = {
         });
     },
 
-    removeTxs: async(res) => {
-        Tx.find().exec(async(err, txs) => {
+    removeTxs: async (res) => {
+        Tx.find().exec(async (err, txs) => {
             if (err) return myErrorHandler('getTx exec: ' + err, res);
             if (txs == null || txs[0] == null) return myErrorHandler('transactions not found', res);
             for (tx in txs) {
@@ -481,7 +489,7 @@ module.exports = {
         });
     },
 
-    getAddressTo: async(coin, uid, res) => {
+    getAddressTo: async (coin, uid, res) => {
         var adr;
         adr = await Addrs.findOne({ coin: coin, userId: uid, active: true }).exec().catch((err) => {
             return myErrorHandler('getAddrTo: ' + err, res)
