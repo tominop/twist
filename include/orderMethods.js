@@ -38,7 +38,7 @@ module.exports = {
         };
         var resp = await axios.post(
                 coins[order.symbolTo].api + action + 'WaitTx', data)
-            .catch((err) => {
+            .catch(err => {
                 myErrorHandler('awaitWithdraw ' + action + 'ing for order id ' +
                     order.exchangeTxId + ', coin ' + order.symbolTo + ' ' + err);
             });
@@ -47,11 +47,27 @@ module.exports = {
     },
 
     /// TODO !!!
-    makeWithdrawTX: async(order, value) => {
+    makeWithdrawTX: async(order, value) => { //  old make outgoing Tx function
         var outTx;
         var jsonData = JSON.stringify({
             // from: coins[order.symbolFrom].walletFrom, // account name in api microservice
             from: order.exchangeAddrFrom, // account name in api microservice
+            to: order.userAddrTo,
+            value: value
+        });
+        return axios.get(coins[order.symbolTo].api + 'makeTxAddrs/' + jsonData) //
+            .catch(err => {
+                myErrorHandler('exec order ' + order.exchangeTxId +
+                    ': Tx to ' + order.userAddrTo + ' chain API error ' + err);
+            });
+    },
+
+    makeWithdrawal: async(order, value) => { //  new make output for outgoing Tx function
+        var outTx;
+        var jsonData = JSON.stringify({
+            // from: coins[order.symbolFrom].walletFrom, // account name in api microservice
+            from: order.exchange, // account name in api microservice
+            orderId: order.exchangeTxId,
             to: order.userAddrTo,
             value: value
         });

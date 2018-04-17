@@ -101,7 +101,7 @@ module.exports = {
         if (incTx == null) return incTx;
         if (incTx.confirms == 0 && order.status.code < 3) {
             if (order.status.code == 1 || incTx.confirms > order.status.data.confirmations) mess('findTxTo', 'exec order ' +
-            order.exchangeTxId + ' deposit Tx confirms ' + incTx.confirms);
+                order.exchangeTxId + ' deposit Tx confirms ' + incTx.confirms);
             order.status = {
                 code: 2,
                 human: twist.humans[2],
@@ -137,7 +137,7 @@ module.exports = {
 
     startDepositWaitConfirm: order => {
         order.waitConfirm = true;
-        order.attemtCount = 0;  //  make withdrawal tx attempts counter
+        order.attemtCount = 0; //  make withdrawal tx attempts counter
         clearTimeout(order.ttlTimeOut);
         order.ttlTimeOut = setTimeout(() => {
             const mess1 = 'deposit not confirmed in ' + twist.waitConfirmPeriod + 'min. period';
@@ -182,8 +182,8 @@ module.exports = {
         if (outTx == null) outTx = await tools.findTx({ To: order.userAddrTo });
         if (outTx == null) return;
         if (outTx.confirms == 0 && order.status.code < 5) {
-            if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId
-             + ' withdrawal Tx confirms ' + outTx.confirms);
+            if (order.status.code < 5 || outTx.confirms > order.status.data.confirmations) mess('findTxFrom', 'exec order ' + order.exchangeTxId +
+                ' withdrawal Tx confirms ' + outTx.confirms);
             order.status = {
                 code: 5,
                 human: twist.humans[5],
@@ -219,7 +219,8 @@ module.exports = {
         mess('makeWithdraw', 'order ' + order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
         if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date });
-        var outTx = await methods.makeWithdrawTX(order, valueFact);
+        //        var outTx = await methods.makeWithdrawTX(order, valueFact);
+        var outTx = await methods.makeWithdrawal(order, valueFact);
         if (outTx == null || outTx.data.hash == null) {
             const mess1 = 'withdraw Tx not created attempt ' + order.attemptCount.toString();
             order.waitConfirm = false;
@@ -229,7 +230,7 @@ module.exports = {
             tools.arhOrder(order);
             return;
         } else {
-            if (outTx.data.hash.length > 15) {
+            if (outTx.data.hash.length > 25) { //  'added ' + exchange + ' output ' phrase control
                 order.hashTxTo = outTx.data.hash;
                 //  !!!TODO correct await Tx to user
                 var tx = {
