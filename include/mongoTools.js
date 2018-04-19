@@ -320,7 +320,7 @@ module.exports = {
 
     incomingTx: async(tx, res) => { //  web hook handler
         // const tx = data.tx;
-        Tx.findOne({ hashTx: tx.hash })
+        Tx.findOne({ hashTx: tx.hashTx, To: tx.To })
             .exec(async(err, existTx) => {
                 var oid;
                 if (err) return myErrorHandler('incoming Tx: ' + err, res)
@@ -328,7 +328,7 @@ module.exports = {
                     if (tx.orderID == '') oid = await tools.findOrderID(tx.addrFrom)
                     else oid = tx.orderID;
                     existTx = new Tx({
-                        hashTx: tx.hash,
+                        hashTx: tx.hashTx,
                         orderID: oid,
                         createDateUTC: tx.createDateUTC,
                         confirms: tx.confirms,

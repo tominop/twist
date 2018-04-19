@@ -23,7 +23,7 @@ module.exports = {
         const ratio = valueToFix(coins[symbolFrom].price / coins[symbolTo].price);
         var valueTo = valueToFix(valueFrom * ratio);
         const fee = coins[symbolTo].minerFee + valueToFix(twist.fee * valueTo / 100);
-        valueTo = valueTo - fee;
+        valueTo = valueToFix(valueTo - fee);
         const time = new Date().getTime();
         var resp = await methods.getAddressTo(symbolFrom, exchange, 0, userID, time.toString()); //  deposit to address
         if (resp == null || resp.data.error) return myErrorHandler('newOrder, new addrTo generation fail', res)
@@ -90,7 +90,7 @@ module.exports = {
         //  checking incoming tx timer
         order.myInterval = setInterval(() => {
             exec.findDepositTx(order);
-            if (order.depositIsFind && order.waitConfirm) exec.startDepositWaitConfirm(order);
+            if (order.depositIsFind && !order.waitConfirm) exec.startDepositWaitConfirm(order);
         }, 20000);
     },
 
@@ -178,7 +178,7 @@ module.exports = {
 
     findWithdrawTx: async(order) => { //  !!!TODO - check all variants!
         var outTx = null;
-        if (order.hashTxTo != '') outTx = await tools.findTx({ hashTx: order.hashTxTo });
+        if (order.hashTxTo != '') outTx = await tools.findTx({ hashTx: order.hashTxTo, To: order.userAddrTo });
         if (outTx == null) outTx = await tools.findTx({ To: order.userAddrTo });
         if (outTx == null) return;
         if (outTx.confirms == 0 && order.status.code < 5) {
@@ -219,12 +219,12 @@ module.exports = {
         mess('makeWithdraw', 'order ' + order.exchangeTxId + ' exec continue: send ' +
             valueFact + order.symbolTo + ' to user');
         if ((order.status).code != 3) utils.setOrderStatus(order, 3, { reason: 'retake order by restart service', time: new Date });
-        //        var outTx = await methods.makeWithdrawTX(order, valueFact);
+        //    var outTx = await methods.makeWithdrawTX(order, valueFact);
         var outTx = await methods.makeWithdrawal(order, valueFact);
         if (outTx == null || outTx.data.hash == null) {
             const mess1 = 'withdraw Tx not created attempt ' + order.attemptCount.toString();
             order.waitConfirm = false;
-            if (order.attemptCount++ < twist.withAtt) return;
+            if (order.attemptCount++ < twist.withdrawAtt) return;
             exec.stopWithdrawWait(order, true, mess1);
             utils.setOrderStatus(order, 7, { code: 3, reason: mess1, time: new Date() })
             tools.arhOrder(order);
@@ -235,7 +235,7 @@ module.exports = {
                 //  !!!TODO correct await Tx to user
                 var tx = {
                     addrFrom: '',
-                    hash: order.hashTxTo,
+                    hashTx: order.hashTxTo,
                     orderID: order.exchangeTxId,
                     createDateUTC: '',
                     confirms: 0,

@@ -12,7 +12,7 @@ module.exports = {
     coinsCheckPeriod: 5, // coins check period - check interval (in minutes)
     orderCheckPeriod: 1, // new order check period - check interval (in minutes)
     waitConfirmPeriod: 60, // awaiting deposit confirmation period (in minutes)
-    withAtt: 10,    //  number of attempts to make & send withdrawal tx
+    withdrawAtt: 10, //  number of attempts to make & send withdrawal tx
     mode: 'development', // default
     minLimit: 1.0, // 
     maxLimit: 200.0, // 
